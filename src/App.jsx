@@ -24,15 +24,17 @@ import {
   XCircle,
   MessageSquare,
   Percent,
-  Coins
+  Coins,
+  ClipboardList
 } from 'lucide-react';
 
 /**
- * App Component - HairSalon Pro v7.6
- * Gestión de comisiones con rol de Dueña (Luz) y desglose de Nequi/Efectivo:
- * - Jhon (60% para él, 40% para Luz)
- * - Nelly (50% para ella, 50% para Luz)
- * - Luz (100% propio + porcentajes de Jhon y Nelly)
+ * App Component - HairSalon Pro v7.7
+ * Gestión financiera avanzada:
+ * - Liquidación: Jhon (60%), Nelly (50%), Luz (Dueña).
+ * - Desglose: Nequi vs Efectivo.
+ * - Contador de servicios por personal.
+ * - Sincronización con Citas Bot.
  */
 export default function App() {
   const [services, setServices] = useState(() => {
@@ -83,43 +85,48 @@ export default function App() {
       .filter(s => s.paymentMethod === 'Efectivo')
       .reduce((acc, s) => acc + Math.round(parseFloat(s.price || 0)), 0);
 
-    // Totales Brutos de Hoy por persona
-    const getGross = (name) => todayServices
-      .filter(s => s.staff === name)
-      .reduce((acc, s) => acc + Math.round(parseFloat(s.price || 0)), 0);
+    // Ayudantes para cálculos por persona
+    const getStats = (name) => {
+      const filtered = todayServices.filter(s => s.staff === name);
+      const gross = filtered.reduce((acc, s) => acc + Math.round(parseFloat(s.price || 0)), 0);
+      return { gross, count: filtered.length };
+    };
 
-    const jhonGross = getGross('Jhon barber');
-    const nellyGross = getGross('Nelly peluquera');
-    const luzGross = getGross('Luz peluquera');
+    const jhonStats = getStats('Jhon barber');
+    const nellyStats = getStats('Nelly peluquera');
+    const luzStats = getStats('Luz peluquera');
 
     // Liquidación con lógica de comisiones
-    const jhonPay = Math.round(jhonGross * 0.60);
-    const jhonFee = jhonGross - jhonPay; // 40% para Luz
+    const jhonPay = Math.round(jhonStats.gross * 0.60);
+    const jhonFee = jhonStats.gross - jhonPay; // 40% para Luz
 
-    const nellyPay = Math.round(nellyGross * 0.50);
-    const nellyFee = nellyGross - nellyPay; // 50% para Luz
+    const nellyPay = Math.round(nellyStats.gross * 0.50);
+    const nellyFee = nellyStats.gross - nellyPay; // 50% para Luz
 
     // Luz gana lo suyo al 100% (dueña) + las comisiones de los otros
-    const luzFinalPay = luzGross + jhonFee + nellyFee;
+    const luzFinalPay = luzStats.gross + jhonFee + nellyFee;
 
     const staffEarnings = [
       { 
         name: 'Jhon barber', 
-        total: jhonGross, 
+        total: jhonStats.gross, 
+        count: jhonStats.count,
         comision: jhonPay, 
         porcentaje: 60,
         nota: "40% para Luz"
       },
       { 
         name: 'Nelly peluquera', 
-        total: nellyGross, 
+        total: nellyStats.gross, 
+        count: nellyStats.count,
         comision: nellyPay, 
         porcentaje: 50,
         nota: "50% para Luz"
       },
       { 
         name: 'Luz peluquera', 
-        total: luzGross, 
+        total: luzStats.gross, 
+        count: luzStats.count,
         comision: luzFinalPay, 
         porcentaje: 100,
         nota: "Dueña (+ comisiones)",
@@ -194,7 +201,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-pink-50 text-slate-900 font-sans">
+    <div className="min-h-screen bg-pink-50 text-slate-900 font-sans selection:bg-rose-200">
       <div className="max-w-4xl mx-auto px-4 py-6 md:py-10">
         
         {/* CABECERA */}
@@ -230,7 +237,7 @@ export default function App() {
             {/* Totales Principales */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-rose-500 p-6 rounded-[2rem] shadow-xl shadow-rose-200 text-white col-span-1 md:col-span-2 flex flex-col justify-center">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 text-left">
                   <div>
                     <p className="text-[10px] font-black text-rose-100 uppercase tracking-widest mb-1">Caja Bruta Hoy</p>
                     <h3 className="text-4xl font-black">${formatCurrency(analysis.incomeToday)}</h3>
@@ -238,7 +245,7 @@ export default function App() {
                   <Wallet size={48} className="opacity-30" />
                 </div>
                 {/* Desglose de Nequi y Efectivo */}
-                <div className="flex gap-6 border-t border-white/20 pt-4">
+                <div className="flex gap-6 border-t border-white/20 pt-4 text-left">
                   <div className="flex items-center gap-2">
                     <Smartphone size={16} className="text-rose-100" />
                     <div>
@@ -258,33 +265,40 @@ export default function App() {
               
               <div className="bg-white p-6 rounded-[2rem] border border-white shadow-sm flex flex-col justify-center text-center">
                 <Coins className="mx-auto text-rose-500 mb-2" size={24} />
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pago Dueña (Luz)</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">Total Dueña<br/>(Luz)</p>
                 <h3 className="text-2xl font-black text-slate-800">${formatCurrency(analysis.staffEarnings.find(s => s.isOwner)?.comision)}</h3>
               </div>
             </div>
 
-            {/* Tarjetas de Liquidación con lógica de Luz */}
+            {/* Tarjetas de Liquidación con Contador de Servicios */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {analysis.staffEarnings.map(s => (
-                <div key={s.name} className={`p-5 rounded-3xl border shadow-sm transition-all ${s.isOwner ? 'bg-rose-50 border-rose-200 ring-2 ring-rose-200' : 'bg-white border-slate-100'}`}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`p-2 rounded-xl ${s.isOwner ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                      <User size={20} />
+                <div key={s.name} className={`p-5 rounded-3xl border shadow-sm transition-all text-left ${s.isOwner ? 'bg-rose-50 border-rose-200 ring-2 ring-rose-200' : 'bg-white border-slate-100'}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-xl ${s.isOwner ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        <User size={20} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-500 uppercase leading-none">{s.name}</p>
+                        <p className="text-[8px] font-bold text-rose-500 uppercase mt-1">{s.nota}</p>
+                      </div>
                     </div>
-                    <div className="text-left">
-                      <p className="text-[10px] font-black text-slate-500 uppercase leading-none">{s.name}</p>
-                      <p className="text-[8px] font-bold text-rose-500 uppercase mt-1">{s.nota}</p>
+                    {/* Badge de contador de servicios */}
+                    <div className="bg-slate-800 text-white px-2 py-1 rounded-lg flex items-center gap-1" title="Servicios realizados hoy">
+                      <ClipboardList size={10} />
+                      <span className="text-[10px] font-black">{s.count}</span>
                     </div>
                   </div>
                   
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-400 font-bold">Producción:</span>
+                      <span className="text-slate-400 font-bold">Producción Bruta:</span>
                       <span className="text-slate-800 font-black">${formatCurrency(s.total)}</span>
                     </div>
                     <div className="flex justify-between items-center pt-3 border-t border-slate-100">
                       <span className={`font-black uppercase text-[10px] ${s.isOwner ? 'text-rose-600' : 'text-slate-500'}`}>
-                        Total a Recibir:
+                        Total Liquidado:
                       </span>
                       <span className={`text-xl font-black ${s.isOwner ? 'text-rose-600' : 'text-slate-800'}`}>
                         ${formatCurrency(s.comision)}
@@ -300,7 +314,7 @@ export default function App() {
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
               <input 
                 type="text" placeholder="Buscar cliente..." 
-                className="w-full pl-14 pr-8 py-5 bg-white rounded-3xl border-0 shadow-sm outline-none focus:ring-4 focus:ring-rose-100 font-medium"
+                className="w-full pl-14 pr-8 py-5 bg-white rounded-3xl border-0 shadow-sm outline-none focus:ring-4 focus:ring-rose-100 font-medium placeholder:text-slate-300"
                 value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
@@ -308,14 +322,14 @@ export default function App() {
             {/* Listado de Servicios */}
             <div className="grid gap-4 pb-12">
               {filteredServices.map(s => (
-                <div key={s.id} className="bg-white/80 backdrop-blur-sm p-6 rounded-[2.5rem] border border-white shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 group transition-all">
+                <div key={s.id} className="bg-white/80 backdrop-blur-sm p-6 rounded-[2.5rem] border border-white shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 group transition-all hover:bg-white">
                   <div className="flex items-center gap-6 w-full text-left">
                     <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center text-rose-500 shrink-0">{getServiceIcon(s.type)}</div>
                     <div>
                       <h4 className="text-lg font-black text-slate-800">{s.client}</h4>
-                      <div className="flex flex-wrap items-center gap-3 mt-1">
-                        <span className="text-[9px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded uppercase">{s.type}</span>
-                        <span className="text-[9px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded uppercase">{s.staff}</span>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <span className="text-[9px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded uppercase tracking-tighter">{s.type}</span>
+                        <span className="text-[9px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded uppercase tracking-tighter">{s.staff}</span>
                         <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded flex items-center gap-1 ${s.paymentMethod === 'Nequi' ? 'bg-purple-50 text-purple-600' : 'bg-green-50 text-green-600'}`}>
                           {s.paymentMethod === 'Nequi' ? <Smartphone size={8} /> : <Banknote size={8} />}{s.paymentMethod}
                         </span>
@@ -324,7 +338,7 @@ export default function App() {
                   </div>
                   <div className="flex items-center justify-between w-full sm:w-auto gap-6 border-t sm:border-t-0 pt-4 sm:pt-0">
                     <span className="text-2xl font-black text-slate-800">${formatCurrency(s.price)}</span>
-                    <button onClick={() => removeService(s.id)} className="text-slate-200 hover:text-rose-500 transition-colors"><Trash2 size={18} /></button>
+                    <button onClick={() => removeService(s.id)} className="text-slate-200 hover:text-rose-500 transition-colors p-2"><Trash2 size={18} /></button>
                   </div>
                 </div>
               ))}
@@ -332,11 +346,11 @@ export default function App() {
           </div>
         )}
 
-        {/* Vistas Secundarias */}
+        {/* Vistas Secundarias (Stats, Add, Appointments) */}
         {view === 'stats' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
             <div className="bg-rose-500 p-8 rounded-[2.5rem] shadow-xl shadow-rose-200 text-white flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="text-center md:text-left">
+              <div className="text-center md:text-left text-white">
                 <p className="text-xs font-black text-rose-100 uppercase tracking-widest mb-2">Total {analysis.monthName}</p>
                 <h2 className="text-5xl font-black">${formatCurrency(analysis.incomeMonthly)}</h2>
               </div>
@@ -364,7 +378,7 @@ export default function App() {
               <form onSubmit={handleAddService} className="space-y-6">
                 <div className="text-left space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nombre del Cliente</label>
-                  <input name="client" required placeholder="Escribe el nombre..." className="w-full px-6 py-4 bg-slate-50 border-0 rounded-2xl focus:ring-4 focus:ring-rose-100 outline-none font-bold" />
+                  <input name="client" required placeholder="Escribe el nombre..." className="w-full px-6 py-4 bg-slate-50 border-0 rounded-2xl focus:ring-4 focus:ring-rose-100 outline-none font-bold placeholder:text-slate-300" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                   <div className="space-y-2">
@@ -389,12 +403,12 @@ export default function App() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Precio Cobrado ($)</label>
-                    <input name="price" type="number" required placeholder="0" className="w-full px-6 py-4 bg-slate-50 border-0 rounded-2xl focus:ring-4 focus:ring-rose-100 outline-none font-black text-xl" />
+                    <input name="price" type="number" required placeholder="0" className="w-full px-6 py-4 bg-slate-50 border-0 rounded-2xl focus:ring-4 focus:ring-rose-100 outline-none font-black text-xl placeholder:text-slate-300" />
                   </div>
                 </div>
                 <div className="flex gap-4 pt-6">
-                  <button type="button" onClick={() => setView('list')} className="flex-1 py-5 bg-slate-50 text-slate-400 rounded-2xl font-bold uppercase text-[10px] tracking-widest">Cerrar</button>
-                  <button type="submit" className="flex-[2] py-5 bg-rose-500 text-white rounded-2xl font-black shadow-xl shadow-rose-200 uppercase text-[10px] tracking-widest">Guardar Registro</button>
+                  <button type="button" onClick={() => setView('list')} className="flex-1 py-5 bg-slate-50 text-slate-400 rounded-2xl font-bold uppercase text-[10px] tracking-widest transition-colors hover:bg-slate-100">Cerrar</button>
+                  <button type="submit" className="flex-[2] py-5 bg-rose-500 text-white rounded-2xl font-black shadow-xl shadow-rose-200 uppercase text-[10px] tracking-widest transition-colors hover:bg-rose-600">Guardar Registro</button>
                 </div>
               </form>
             </div>
@@ -409,7 +423,7 @@ export default function App() {
                 <p className="text-sm text-slate-400 font-medium italic">Sincronizado con Chatbot de WhatsApp</p>
               </div>
               <button 
-                onClick={() => setAppointments([{id: Date.now(), client: "Andrés Vera", type: "Corte", date: new Date().toISOString(), source: "WhatsApp Bot", status: "Pendiente"}, ...appointments])}
+                onClick={() => setAppointments([{id: Date.now(), client: "Cliente Simulada", type: "Coloración", date: new Date().toISOString(), source: "WhatsApp Bot", status: "Pendiente"}, ...appointments])}
                 className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-green-100 transition-all w-full md:w-auto justify-center"
               >
                 <MessageSquare size={16} /> Simular Cita WhatsApp
@@ -418,14 +432,14 @@ export default function App() {
 
             <div className="grid gap-4">
               {appointments.length > 0 ? appointments.map(app => (
-                <div key={app.id} className="bg-white p-6 rounded-[2rem] border border-white shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 hover:border-rose-100 transition-colors">
-                  <div className="flex items-center gap-5 w-full text-left">
+                <div key={app.id} className="bg-white p-6 rounded-[2rem] border border-white shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 hover:border-rose-100 transition-colors text-left">
+                  <div className="flex items-center gap-5 w-full">
                     <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 shrink-0"><User size={28} /></div>
                     <div className="overflow-hidden">
                       <h4 className="text-lg font-black text-slate-800 truncate">{app.client}</h4>
                       <div className="flex flex-wrap items-center gap-3 mt-1">
-                        <span className="text-[9px] font-black uppercase text-green-600 bg-green-50 px-2 py-0.5 rounded">{app.source}</span>
-                        <span className="text-[9px] font-black uppercase text-rose-500 bg-rose-50 px-2 py-0.5 rounded">{app.type}</span>
+                        <span className="text-[9px] font-black uppercase text-green-600 bg-green-50 px-2 py-0.5 rounded tracking-tighter">{app.source}</span>
+                        <span className="text-[9px] font-black uppercase text-rose-500 bg-rose-50 px-2 py-0.5 rounded tracking-tighter">{app.type}</span>
                         <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1"><Clock size={12} /> {new Date(app.date).toLocaleDateString()}</span>
                       </div>
                     </div>
@@ -445,7 +459,7 @@ export default function App() {
           </div>
         )}
 
-        <footer className="mt-16 text-center opacity-20 text-[10px] font-black uppercase tracking-[0.5em]">HairSalon Pro v7.6 • 2025</footer>
+        <footer className="mt-16 text-center opacity-20 text-[10px] font-black uppercase tracking-[0.5em] pb-10">HairSalon Pro v7.7 • 2025</footer>
       </div>
     </div>
   );
