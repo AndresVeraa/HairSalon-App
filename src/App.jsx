@@ -9,6 +9,7 @@ import ServiceList from './components/services/ServiceList'
 import AppointmentList from './components/appointments/AppointmentList'
 import MonthlyBarChart from './components/stats/MonthlyBarChart'
 import LoyaltyPanel from './components/loyalty/LoyaltyPanel'
+import ClientWallet from './components/loyalty/ClientWallet'
 import { calculateDailyCash, calculateStaffSettlement } from './utils/settlementCalculations'
 import { calculateMonthlyStats } from './utils/statsCalculations'
 import {
@@ -36,6 +37,8 @@ export default function App() {
     readJsonArray(window.localStorage, LOYALTY_STORAGE_KEYS.points),
   )
   const [selectedCustomer, setSelectedCustomer] = useState(null)
+  const [role, setRole] = useState('admin')
+  const [walletCustomerId, setWalletCustomerId] = useState(null)
 
   useEffect(() => writeStorageArray(window.localStorage, serviceStorageKey, services), [services])
   useEffect(() => writeStorageArray(window.localStorage, appointmentStorageKey, appointments), [appointments])
@@ -138,19 +141,27 @@ export default function App() {
     <div className="brand-shell min-h-screen bg-pink-50 text-slate-900 font-sans selection:bg-rose-200">
       <div className="max-w-4xl mx-auto px-4 py-6 md:py-10">
         <div className="flex flex-col lg:flex-row justify-between items-center mb-8 gap-6">
-          <Header />
-          <Navbar
-            view={view}
-            onChange={(nextView) => {
-              setEditingService(null)
-              setServiceDraft(null)
-              setPendingAppointmentId(null)
-              setSelectedCustomer(null)
-              setView(nextView)
+          <Header
+            role={role}
+            onRoleChange={(nextRole) => {
+              setRole(nextRole)
+              setView(nextRole === 'client' ? 'wallet' : 'list')
             }}
           />
+          {role === 'admin' && (
+            <Navbar
+              view={view}
+              onChange={(nextView) => {
+                setEditingService(null)
+                setServiceDraft(null)
+                setPendingAppointmentId(null)
+                setSelectedCustomer(null)
+                setView(nextView)
+              }}
+            />
+          )}
         </div>
-        {view === 'list' && (
+        {role === 'admin' && view === 'list' && (
           <div className="space-y-6 animate-in fade-in duration-500">
             <SettlementSummary cash={cash} staff={staff} />
             <ServiceList
@@ -165,7 +176,7 @@ export default function App() {
             />
           </div>
         )}
-        {view === 'loyalty' && (
+        {role === 'admin' && view === 'loyalty' && (
           <LoyaltyPanel
             customers={customers}
             onCreate={createLoyaltyCustomer}
@@ -174,7 +185,10 @@ export default function App() {
             onCloseProfile={() => setSelectedCustomer(null)}
           />
         )}
-        {view === 'stats' && (
+        {role === 'client' && view === 'wallet' && (
+          <ClientWallet customers={customers} customerId={walletCustomerId} onCustomerChange={setWalletCustomerId} />
+        )}
+        {role === 'admin' && view === 'stats' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
             <div className="bg-[#121212] p-8 rounded-[2.5rem] shadow-xl shadow-stone-900/20 text-white flex items-center justify-between border border-[#c9a15c]/30">
               <div>
@@ -187,7 +201,7 @@ export default function App() {
             <MonthlyBarChart dailyData={monthly.dailyData} maxDaily={monthly.maxDaily} />
           </div>
         )}
-        {view === 'add' && (
+        {role === 'admin' && view === 'add' && (
           <ServiceForm
             initialService={serviceDraft}
             customers={customers}
@@ -208,7 +222,7 @@ export default function App() {
           }}
           onCancel={() => setEditingService(null)}
         />
-        {view === 'appointments' && (
+        {role === 'admin' && view === 'appointments' && (
           <div className="space-y-6 animate-in fade-in">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-left">
               <div className="w-full">

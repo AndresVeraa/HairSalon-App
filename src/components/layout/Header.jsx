@@ -1,6 +1,7 @@
 import { Scissors } from 'lucide-react'
+import RoleSwitcher from '../auth/RoleSwitcher'
 
-export default function Header() {
+export default function Header({ role, onRoleChange }) {
   return (
     <header className="flex flex-col lg:flex-row justify-between items-center mb-8 gap-6">
       <div className="flex items-center gap-4">
@@ -19,6 +20,7 @@ export default function Header() {
           <p className="text-[10px] italic text-slate-500 mt-1">Tu mejor versión, con confianza.</p>
         </div>
       </div>
+      <RoleSwitcher role={role} onRoleChange={onRoleChange} />
     </header>
   )
 }

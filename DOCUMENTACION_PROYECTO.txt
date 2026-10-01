@@ -628,3 +628,30 @@ La interfaz fue alineada con la identidad "Hair Style — Salón & Barbería":
 El monograma actual es una representación CSS/HTML provisional. El isotipo
 definitivo con las iniciales entrelazadas y el barber pole debe sustituirse por
 un recurso SVG o imagen de marca cuando exista el archivo oficial.
+
+
+15. ROLES LOCALES Y WALLET DEL CLIENTE
+--------------------------------------
+
+Se agregó una separación de uso local entre dos perfiles:
+
+- Administrador:
+  - Accede a liquidación, citas, estadísticas, registros y fidelización.
+  - Puede crear clientes y asociarlos a servicios.
+- Cliente:
+  - Accede a su vista "Mi Wallet".
+  - Consulta su tarjeta digital, nivel y puntos.
+  - Puede seleccionar un cliente de demostración cuando existen varios
+    perfiles locales.
+  - Puede descargar una representación JSON de su tarjeta mediante "Guardar
+    tarjeta en mi Wallet".
+
+La Wallet actual es una tarjeta web/PWA local. La información se conserva en
+localStorage y la PWA puede instalarse desde un navegador compatible gracias a
+public/manifest.webmanifest. No es todavía una tarjeta nativa de Apple Wallet
+ni Google Wallet: esas integraciones necesitan un backend, certificados,
+credenciales de emisor y endpoints seguros.
+
+La selección de rol es una demostración local y no debe considerarse
+autenticación. El control real de acceso, cuentas, contraseñas, JWT y roles
+seguros queda pendiente para la Fase 3.

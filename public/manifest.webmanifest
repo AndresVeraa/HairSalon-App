@@ -1,0 +1,11 @@
+{
+  "name": "Hair Style — Salón & Barbería",
+  "short_name": "Hair Style",
+  "description": "Tu mejor versión, con confianza.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "lang": "es",
+  "icons": []
+}
