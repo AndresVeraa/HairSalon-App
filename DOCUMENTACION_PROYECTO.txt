@@ -1,0 +1,547 @@
+DOCUMENTACION DEL PROYECTO - HAIRSALON APP
+============================================
+
+Fecha de esta documentación: 2026-10-01
+Versión visible en la interfaz: HairSalon Pro v7.7
+
+Este archivo resume lo que existe actualmente en el proyecto, cómo está
+organizado, cómo funciona, qué requisitos tiene y cómo probarlo.
+
+
+1. RESUMEN DEL PROYECTO
+-----------------------
+
+HairSalon App es una aplicación web de una sola página (SPA) para llevar el
+control básico de un salón de belleza/barbería. Permite registrar servicios
+realizados, consultar el dinero producido, calcular la liquidación diaria del
+personal, revisar estadísticas mensuales y visualizar citas simuladas
+provenientes de un chatbot de WhatsApp.
+
+La aplicación está construida con React y Vite. Actualmente es un prototipo
+funcional del lado del cliente:
+
+- No tiene servidor propio.
+- No tiene API.
+- No tiene base de datos externa.
+- No tiene usuarios, autenticación ni permisos.
+- Los datos se guardan únicamente en el localStorage del navegador.
+- Los datos dependen del navegador y del dispositivo donde se ejecuta.
+
+
+2. TECNOLOGÍAS Y REQUISITOS
+---------------------------
+
+Tecnologías principales:
+
+- JavaScript moderno (ES Modules).
+- React 18.2.
+- React DOM 18.2.
+- Vite 7.3 como herramienta de desarrollo y compilación.
+- Tailwind CSS 3.4 para estilos.
+- PostCSS y Autoprefixer.
+- lucide-react para los iconos.
+- ESLint para reglas básicas de código.
+
+Requisitos para trabajar localmente:
+
+- Node.js instalado. Se recomienda una versión LTS vigente.
+- npm incluido con Node.js.
+- Un navegador moderno (Chrome, Edge, Firefox o similar).
+- Acceso a internet durante la primera instalación y para cargar la fuente
+  Plus Jakarta Sans desde Google Fonts, salvo que se cambie esa configuración.
+
+No se requiere:
+
+- MySQL, PostgreSQL u otra base de datos.
+- Firebase.
+- Docker.
+- Variables de entorno.
+- Un backend.
+
+
+3. ESTRUCTURA DEL PROYECTO
+---------------------------
+
+Archivos y carpetas principales:
+
+- index.html
+  Punto de entrada HTML. Define el idioma español, el título de la página,
+  el favicon actual de Vite y carga la fuente Plus Jakarta Sans.
+
+- src/main.jsx
+  Monta el componente principal App dentro del elemento HTML con id "root".
+  También importa los estilos globales.
+
+- src/App.jsx
+  Contiene prácticamente toda la lógica y la interfaz de la aplicación:
+  estado, persistencia, cálculos, navegación entre vistas, formularios y
+  renderizado de los servicios y citas.
+
+- src/index.css
+  Importa las capas de Tailwind, define el fondo global rosado, ajustes del
+  body, controles numéricos y el estilo visual de los select.
+
+- src/App.css
+  Conserva estilos iniciales de la plantilla de Vite. La interfaz actual
+  utiliza principalmente clases de Tailwind.
+
+- vite.config.js
+  Configura Vite con el plugin de React.
+
+- tailwind.config.js
+  Indica qué archivos debe revisar Tailwind y configura Plus Jakarta Sans como
+  fuente sans-serif.
+
+- postcss.config.js
+  Activa Tailwind CSS y Autoprefixer.
+
+- eslint.config.js
+  Configura ESLint para JavaScript, React Hooks y React Refresh.
+
+- package.json
+  Contiene dependencias y comandos npm.
+
+- package-lock.json
+  Fija las versiones concretas de las dependencias instaladas por npm.
+
+- public/
+  Contiene actualmente el favicon vite.svg.
+
+
+4. FUNCIONES IMPLEMENTADAS
+--------------------------
+
+4.1. Navegación principal
+
+La interfaz tiene cuatro vistas seleccionables desde la barra superior:
+
+1) Liquidación
+   Vista principal con caja del día, desglose de pagos, liquidación del
+   personal, buscador y listado de servicios.
+
+2) Citas Bot
+   Lista de citas almacenadas y botón para crear una cita simulada como si
+   llegara desde WhatsApp.
+
+3) Estadísticas
+   Muestra el total del mes actual y una gráfica de ventas por día.
+
+4) Registro
+   Formulario para crear un nuevo servicio.
+
+El estado de la vista se controla con el valor interno "view":
+
+- "list"
+- "appointments"
+- "stats"
+- "add"
+
+
+4.2. Registro de servicios
+
+Desde "Registro" se puede guardar un servicio con estos datos:
+
+- Nombre del cliente (obligatorio).
+- Persona que atendió:
+  - Jhon barber
+  - Nelly peluquera
+  - Luz peluquera
+- Tipo de servicio:
+  - Corte
+  - Peinado
+  - Cepillado
+  - Coloración
+  - Tratamiento
+  - Otro
+- Método de pago:
+  - Efectivo
+  - Nequi
+- Precio cobrado (obligatorio).
+- Campo interno de notas preparado en la lógica, aunque actualmente no existe
+  un control visible para diligenciarlo.
+
+Al guardar:
+
+- Se genera un id basado en Date.now().
+- Se guarda la fecha y hora actuales en formato ISO.
+- El precio se convierte a número y se redondea con Math.round.
+- El servicio aparece al principio del listado.
+- La aplicación regresa automáticamente a la vista Liquidación.
+
+
+4.3. Listado, búsqueda y eliminación
+
+En Liquidación:
+
+- Los servicios se muestran con cliente, tipo, persona responsable, método de
+  pago, precio e icono según el tipo de servicio.
+- El buscador filtra por nombre de cliente sin distinguir mayúsculas y
+  minúsculas.
+- Cada registro tiene un botón para eliminarlo.
+- Antes de eliminar se solicita confirmación mediante window.confirm.
+
+No existe actualmente una opción de editar un servicio ya guardado.
+
+
+4.4. Caja diaria
+
+La tarjeta principal calcula la "Caja Bruta Hoy":
+
+- Toma los servicios cuya fecha coincide con el día actual.
+- Suma los precios redondeados.
+- Separa el total del día entre Nequi y Efectivo.
+
+También se muestra el total liquidado que corresponde a Luz.
+
+
+4.5. Liquidación del personal
+
+La liquidación se calcula únicamente con los servicios del día actual.
+
+Reglas actuales:
+
+- Jhon barber:
+  - Produce el 100% del valor de sus servicios.
+  - Recibe el 60%.
+  - Luz recibe el 40% restante.
+
+- Nelly peluquera:
+  - Produce el 100% del valor de sus servicios.
+  - Recibe el 50%.
+  - Luz recibe el 50% restante.
+
+- Luz peluquera:
+  - Recibe el 100% de sus propios servicios.
+  - Además recibe las participaciones de Jhon y Nelly que corresponden a la
+    dueña.
+
+Cada tarjeta muestra:
+
+- Producción bruta de la persona.
+- Total liquidado.
+- Cantidad de servicios realizados hoy.
+- Nota con el porcentaje o la condición de dueña.
+
+Los cálculos usan Math.round, por lo que los valores decimales se redondean.
+
+
+4.6. Estadísticas mensuales
+
+La vista Estadísticas trabaja con el mes y año actuales:
+
+- Calcula el ingreso total del mes.
+- Calcula un total para cada día del mes.
+- Dibuja una barra por día.
+- Escala las barras con base en el día de mayor ingreso.
+- Incluye días sin ventas con una barra vacía.
+
+No hay filtros para cambiar manualmente el mes ni exportación de reportes.
+
+
+4.7. Citas Bot
+
+La vista Citas Bot tiene estas funciones:
+
+- Muestra las citas pendientes guardadas.
+- Permite crear una cita de prueba con el botón "Simular Cita WhatsApp".
+- La cita simulada usa:
+  - Cliente: Cliente Simulada
+  - Tipo: Coloración
+  - Fuente: WhatsApp Bot
+  - Estado: Pendiente
+  - Fecha: fecha y hora actuales
+- El botón con check lleva a la vista Nuevo Registro.
+- El botón con X elimina la cita de la lista.
+
+Importante: la aceptación de una cita no crea automáticamente un servicio ni
+prellena el formulario con los datos de la cita. La integración con WhatsApp
+real todavía no existe; la función es solo una simulación local.
+
+
+5. PERSISTENCIA DE DATOS
+------------------------
+
+Se utilizan estas claves de localStorage:
+
+- hairsalon_v7_records
+  Guarda el arreglo de servicios.
+
+- hairsalon_v7_appointments
+  Guarda el arreglo de citas.
+
+La aplicación lee estas claves al iniciar y las actualiza cada vez que cambia
+el estado correspondiente.
+
+Consecuencias:
+
+- Si se borra el almacenamiento del navegador, se pierden los registros.
+- Otro navegador no verá los mismos datos.
+- Otro equipo no verá los mismos datos.
+- No hay copias de seguridad automáticas.
+- No existe sincronización entre usuarios o dispositivos.
+- Los datos están en el navegador, no en un servidor.
+
+Para reiniciar los datos desde el navegador se puede abrir DevTools y ejecutar:
+
+localStorage.removeItem('hairsalon_v7_records');
+localStorage.removeItem('hairsalon_v7_appointments');
+
+Después hay que recargar la página.
+
+
+6. INSTALACION Y EJECUCION
+--------------------------
+
+Desde la carpeta raíz del proyecto:
+
+1) Instalar dependencias:
+
+   npm install
+
+2) Iniciar el servidor de desarrollo:
+
+   npm run dev
+
+3) Abrir en el navegador la URL que muestre Vite, normalmente:
+
+   http://localhost:5173/
+
+Para crear una versión de producción:
+
+   npm run build
+
+El resultado se genera en la carpeta dist/.
+
+Para revisar localmente la compilación de producción:
+
+   npm run preview
+
+El comando de preview mostrará otra URL local para abrirla en el navegador.
+
+Comandos disponibles actualmente en package.json:
+
+- npm run dev
+- npm run build
+- npm run preview
+
+No existe actualmente un script npm test ni un script npm lint en package.json.
+
+
+7. COMO PROBAR MANUALMENTE LA APLICACION
+----------------------------------------
+
+Prueba básica de arranque:
+
+1) Ejecutar npm install.
+2) Ejecutar npm run dev.
+3) Abrir la URL local.
+4) Confirmar que aparece HairSalon y la navegación superior.
+
+Prueba de registro:
+
+1) Entrar a "Registro".
+2) Escribir un nombre de cliente.
+3) Seleccionar una persona.
+4) Seleccionar un servicio.
+5) Seleccionar Efectivo o Nequi.
+6) Escribir un precio.
+7) Pulsar "Guardar Registro".
+8) Confirmar que el registro aparece en Liquidación.
+
+Prueba de caja y pagos:
+
+1) Crear un servicio con Efectivo.
+2) Crear otro con Nequi.
+3) Revisar que "Caja Bruta Hoy" sea la suma de ambos.
+4) Revisar que Nequi y Efectivo estén separados correctamente.
+
+Prueba de liquidación:
+
+1) Crear un servicio para Jhon.
+2) Verificar que su liquidación sea el 60% de su producción.
+3) Crear un servicio para Nelly.
+4) Verificar que su liquidación sea el 50%.
+5) Crear un servicio para Luz.
+6) Verificar que Luz reciba sus servicios completos más las participaciones
+   restantes de Jhon y Nelly.
+7) Revisar que el contador de servicios de cada tarjeta aumente.
+
+Prueba de búsqueda y eliminación:
+
+1) Crear varios registros con nombres diferentes.
+2) Escribir parte del nombre en "Buscar cliente...".
+3) Confirmar que solo aparecen las coincidencias.
+4) Pulsar el icono de papelera.
+5) Confirmar la eliminación en el diálogo del navegador.
+
+Prueba de estadísticas:
+
+1) Crear al menos un servicio.
+2) Entrar a "Estadísticas".
+3) Confirmar que el total del mes incluya el servicio.
+4) Confirmar que el día correspondiente tenga una barra de ventas.
+
+Prueba de citas:
+
+1) Entrar a "Citas Bot".
+2) Pulsar "Simular Cita WhatsApp".
+3) Confirmar que aparece "Cliente Simulada".
+4) Pulsar X y confirmar que desaparece.
+5) Volver a simular una cita y pulsar el botón con check.
+6) Confirmar que se abre Registro; recordar que los datos no se copian
+   automáticamente al formulario.
+
+Prueba de persistencia:
+
+1) Crear un registro.
+2) Recargar la página.
+3) Confirmar que el registro continúa visible.
+4) Cerrar y abrir nuevamente la pestaña en el mismo navegador.
+5) Confirmar que los datos continúan disponibles.
+
+Prueba de compilación:
+
+1) Ejecutar npm run build.
+2) Confirmar que Vite termina sin errores y crea dist/.
+
+
+8. ESTADO ACTUAL Y LIMITACIONES CONOCIDAS
+-----------------------------------------
+
+Implementado:
+
+- Interfaz visual responsive.
+- Registro de servicios.
+- Lista de servicios.
+- Búsqueda por cliente.
+- Eliminación con confirmación.
+- Cálculo de caja del día.
+- Desglose por Efectivo y Nequi.
+- Liquidación configurable en el código para Jhon, Nelly y Luz.
+- Conteo diario de servicios por persona.
+- Estadísticas mensuales por día.
+- Simulación de citas de WhatsApp.
+- Persistencia local en el navegador.
+
+Pendiente o no implementado:
+
+- Backend y base de datos centralizada.
+- Inicio de sesión y roles.
+- Integración real con WhatsApp.
+- Agenda con fecha y hora seleccionables.
+- Edición de registros.
+- Exportación a Excel, CSV o PDF.
+- Reportes históricos por rangos de fechas.
+- Configuración de empleados, porcentajes y tipos de servicio desde la UI.
+- Gestión real del estado de una cita.
+- Conversión automática de cita aceptada a servicio.
+- Campo visible y uso de notas.
+- Validaciones avanzadas de precio, fechas y datos duplicados.
+- Pruebas automatizadas.
+- Script de lint integrado a npm.
+- Favicon y branding finales: actualmente se conserva vite.svg.
+- Manejo de errores para datos corruptos en localStorage.
+
+Detalle importante para futuras mejoras:
+
+La lógica, el estado y gran parte de la interfaz viven en un solo archivo
+src/App.jsx. Si el proyecto crece, convendría separar componentes, cálculos,
+tipos de datos, almacenamiento y servicios de integración.
+
+
+9. REGLAS DE DATOS ACTUALES
+---------------------------
+
+Ejemplo conceptual de un servicio guardado:
+
+{
+  id: 1710000000000,
+  client: "Nombre del cliente",
+  type: "Corte",
+  price: 25000,
+  paymentMethod: "Efectivo",
+  staff: "Jhon barber",
+  date: "2026-10-01T15:00:00.000Z",
+  notes: null
+}
+
+Ejemplo conceptual de una cita simulada:
+
+{
+  id: 1710000000000,
+  client: "Cliente Simulada",
+  type: "Coloración",
+  date: "2026-10-01T15:00:00.000Z",
+  source: "WhatsApp Bot",
+  status: "Pendiente"
+}
+
+Las fechas se guardan en ISO y se muestran usando la configuración local del
+navegador.
+
+
+10. PUNTO RECOMENDADO PARA RETOMAR EL DESARROLLO
+------------------------------------------------
+
+Una ruta práctica para continuar el proyecto sería:
+
+1) Ejecutar la aplicación y repetir las pruebas manuales de este documento.
+2) Agregar un script npm lint y corregir los avisos encontrados.
+3) Separar App.jsx en componentes y funciones de dominio.
+4) Agregar pruebas para los cálculos de liquidación y estadísticas.
+5) Decidir si el almacenamiento seguirá siendo local o pasará a un backend.
+6) Si se requiere uso real del negocio, implementar autenticación, base de
+   datos, copias de seguridad e integración segura con WhatsApp.
+7) Implementar edición de servicios, reportes y configuración de porcentajes.
+
+Este documento describe el estado observado del código actual; cualquier
+funcionalidad futura debe actualizarse aquí para conservar una base de trabajo
+confiable.
+
+
+11. FASE 1 DE REFACTORIZACION (IMPLEMENTADA)
+---------------------------------------------
+
+La primera fase de modularización fue incorporada sin depender todavía de un
+esquema de base de datos:
+
+- App.jsx ahora coordina el estado y compone módulos especializados.
+- Componentes de layout:
+  - src/components/layout/Header.jsx
+  - src/components/layout/Navbar.jsx
+- Componentes de liquidación:
+  - src/components/settlement/DailyCashCard.jsx
+  - src/components/settlement/StaffSettlementCard.jsx
+  - src/components/settlement/SettlementSummary.jsx
+- Componentes de servicios:
+  - src/components/services/ServiceForm.jsx
+  - src/components/services/ServiceList.jsx
+  - src/components/services/ServiceItem.jsx
+  - src/components/services/EditServiceModal.jsx
+- Componentes de citas:
+  - src/components/appointments/BotAppointmentCard.jsx
+  - src/components/appointments/AppointmentList.jsx
+- Componentes de estadísticas:
+  - src/components/stats/MonthlyBarChart.jsx
+  - src/components/stats/DateFilter.jsx
+- Utilidades:
+  - src/utils/settlementCalculations.js
+  - src/utils/statsCalculations.js
+  - src/utils/storageHelper.js
+
+storageHelper.js valida que los valores almacenados sean arreglos y filtra
+elementos con una estructura mínima válida. Si el JSON está corrupto o el
+almacenamiento falla, registra el error en consola y evita que la aplicación
+se caiga.
+
+También se añadieron:
+
+- npm run lint para ESLint.
+- npm test para ejecutar Vitest.
+- npm run format para aplicar Prettier.
+- .prettierrc con el formato compartido del proyecto.
+- Pruebas unitarias de caja diaria, separación Efectivo/Nequi y comisiones.
+
+En esta fase también se dejó disponible la edición de servicios desde el
+formulario reutilizado. La integración con backend, autenticación y esquema
+relacional queda deliberadamente para las fases posteriores.
