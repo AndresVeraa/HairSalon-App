@@ -567,3 +567,37 @@ Se completó el flujo de gestión de servicios y citas:
 La conversión todavía requiere que el usuario complete el precio, la persona
 que atendió y el método de pago, porque esos datos no forman parte del modelo
 actual de una cita simulada.
+
+
+13. PROTOTIPO LOCAL DE FIDELIZACION
+-----------------------------------
+
+Se agregó el primer bloque de fidelización sin asumir todavía el esquema de
+base de datos definitivo:
+
+- Vista de Fidelización dentro de la navegación.
+- Registro de nombre, teléfono y correo del cliente.
+- Generación de customer_id y token QR local.
+- Bono inicial de 20 puntos.
+- Niveles Plata, Oro y Diamante.
+- Perfil con saldo y token de tarjeta digital.
+- Persistencia local en:
+  - hairsalon_v7_customers
+  - hairsalon_v7_points
+- Lector QR basado en html5-qrcode para posteriores escaneos.
+- Asociación opcional de un cliente al guardar un servicio.
+- Registro automático en el historial de puntos.
+
+Reglas locales actuales:
+
+- Corte, Peinado y Cepillado: 15 puntos.
+- Coloración, Rayitos y Tratamiento: 40 puntos.
+- Keratina y Alisado: 85 puntos.
+- Otros servicios: 10 puntos.
+- Plata: menos de 150 puntos.
+- Oro: desde 150 puntos.
+- Diamante: desde 300 puntos.
+
+Este prototipo todavía no integra NFC físico, OTP, WhatsApp, backend,
+recompensas canjeables ni sincronización multidispositivo. Esas funciones se
+reservan para las fases posteriores.

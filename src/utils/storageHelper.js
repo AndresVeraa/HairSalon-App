@@ -17,6 +17,8 @@ export const readStorageArray = (storage, key, validator) => {
   }
 }
 
+export const readJsonArray = (storage, key) => readStorageArray(storage, key, () => true)
+
 export const writeStorageArray = (storage, key, value) => {
   try {
     storage.setItem(key, JSON.stringify(value))

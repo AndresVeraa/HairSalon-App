@@ -6,7 +6,7 @@ const toDateTimeInputValue = (date) => {
   return new Date(parsed.getTime() - offset * 60 * 1000).toISOString().slice(0, 16)
 }
 
-export default function ServiceForm({ initialService, onSubmit, onCancel }) {
+export default function ServiceForm({ initialService, customers = [], onSubmit, onCancel }) {
   return (
     <div className="max-w-xl mx-auto animate-in zoom-in-95">
       <div className="bg-white p-8 md:p-10 rounded-[3rem] shadow-2xl border border-rose-50">
@@ -70,6 +70,23 @@ export default function ServiceForm({ initialService, onSubmit, onCancel }) {
               defaultValue={toDateTimeInputValue(initialService?.date || new Date())}
               className="w-full px-6 py-4 bg-slate-50 border-0 rounded-2xl font-bold"
             />
+          </label>
+          <label className="block text-left space-y-2">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">
+              Cliente de fidelidad
+            </span>
+            <select
+              name="customerId"
+              defaultValue={initialService?.customerId || ''}
+              className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold"
+            >
+              <option value="">Sin tarjeta asociada</option>
+              {customers.map((customer) => (
+                <option key={customer.customer_id} value={customer.customer_id}>
+                  {customer.name} ({customer.total_points} pts)
+                </option>
+              ))}
+            </select>
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
             <label className="space-y-2">

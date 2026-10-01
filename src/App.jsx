@@ -8,15 +8,18 @@ import EditServiceModal from './components/services/EditServiceModal'
 import ServiceList from './components/services/ServiceList'
 import AppointmentList from './components/appointments/AppointmentList'
 import MonthlyBarChart from './components/stats/MonthlyBarChart'
+import LoyaltyPanel from './components/loyalty/LoyaltyPanel'
 import { calculateDailyCash, calculateStaffSettlement } from './utils/settlementCalculations'
 import { calculateMonthlyStats } from './utils/statsCalculations'
 import {
   appointmentStorageKey,
   readAppointments,
+  readJsonArray,
   readServices,
   writeStorageArray,
   serviceStorageKey,
 } from './utils/storageHelper'
+import { addPointsTransaction, createCustomer, LOYALTY_STORAGE_KEYS } from './utils/loyaltyCalculations'
 
 const icons = { Corte: Scissors, Peinado: Crown, Cepillado: Wind, Coloración: Palette, Tratamiento: Sparkles }
 
@@ -28,9 +31,16 @@ export default function App() {
   const [editingService, setEditingService] = useState(null)
   const [serviceDraft, setServiceDraft] = useState(null)
   const [pendingAppointmentId, setPendingAppointmentId] = useState(null)
+  const [customers, setCustomers] = useState(() => readJsonArray(window.localStorage, LOYALTY_STORAGE_KEYS.customers))
+  const [pointsLedger, setPointsLedger] = useState(() =>
+    readJsonArray(window.localStorage, LOYALTY_STORAGE_KEYS.points),
+  )
+  const [selectedCustomer, setSelectedCustomer] = useState(null)
 
   useEffect(() => writeStorageArray(window.localStorage, serviceStorageKey, services), [services])
   useEffect(() => writeStorageArray(window.localStorage, appointmentStorageKey, appointments), [appointments])
+  useEffect(() => writeStorageArray(window.localStorage, LOYALTY_STORAGE_KEYS.customers, customers), [customers])
+  useEffect(() => writeStorageArray(window.localStorage, LOYALTY_STORAGE_KEYS.points, pointsLedger), [pointsLedger])
 
   const cash = useMemo(() => calculateDailyCash(services), [services])
   const staff = useMemo(() => calculateStaffSettlement(services), [services])
@@ -53,6 +63,7 @@ export default function App() {
       paymentMethod: formData.get('paymentMethod'),
       staff: formData.get('staff'),
       notes: formData.get('notes') || '',
+      customerId: formData.get('customerId') || '',
       date: formData.get('date') ? new Date(formData.get('date')).toISOString() : new Date().toISOString(),
     }
     if (editingService) {
@@ -62,6 +73,14 @@ export default function App() {
       setEditingService(null)
     } else {
       setServices((current) => [{ ...values, id: Date.now() }, ...current])
+      const customer = customers.find((item) => item.customer_id === values.customerId)
+      if (customer) {
+        const result = addPointsTransaction(customer, values, values.staff)
+        setCustomers((current) =>
+          current.map((item) => (item.customer_id === customer.customer_id ? result.customer : item)),
+        )
+        setPointsLedger((current) => [result.transaction, ...current])
+      }
       if (pendingAppointmentId !== null) {
         setAppointments((current) => current.filter((appointment) => appointment.id !== pendingAppointmentId))
         setPendingAppointmentId(null)
@@ -94,6 +113,27 @@ export default function App() {
     setView('add')
   }
 
+  const createLoyaltyCustomer = (formData) => {
+    const customer = createCustomer({
+      name: formData.get('name'),
+      phone: formData.get('phone'),
+      email: formData.get('email') || '',
+    })
+    setCustomers((current) => [customer, ...current])
+    setPointsLedger((current) => [
+      {
+        transaction_id: `welcome_${customer.customer_id}`,
+        customer_id: customer.customer_id,
+        points_earned: 20,
+        service_type: 'Bono de bienvenida',
+        staff_name: 'Sistema',
+        date: customer.created_at,
+      },
+      ...current,
+    ])
+    setSelectedCustomer(customer)
+  }
+
   return (
     <div className="min-h-screen bg-pink-50 text-slate-900 font-sans selection:bg-rose-200">
       <div className="max-w-4xl mx-auto px-4 py-6 md:py-10">
@@ -105,6 +145,7 @@ export default function App() {
               setEditingService(null)
               setServiceDraft(null)
               setPendingAppointmentId(null)
+              setSelectedCustomer(null)
               setView(nextView)
             }}
           />
@@ -124,6 +165,15 @@ export default function App() {
             />
           </div>
         )}
+        {view === 'loyalty' && (
+          <LoyaltyPanel
+            customers={customers}
+            onCreate={createLoyaltyCustomer}
+            onSelect={setSelectedCustomer}
+            selectedCustomer={selectedCustomer}
+            onCloseProfile={() => setSelectedCustomer(null)}
+          />
+        )}
         {view === 'stats' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
             <div className="bg-rose-500 p-8 rounded-[2.5rem] shadow-xl shadow-rose-200 text-white flex items-center justify-between">
@@ -140,6 +190,7 @@ export default function App() {
         {view === 'add' && (
           <ServiceForm
             initialService={serviceDraft}
+            customers={customers}
             onSubmit={saveService}
             onCancel={() => {
               setServiceDraft(null)
@@ -150,6 +201,7 @@ export default function App() {
         )}
         <EditServiceModal
           service={editingService}
+          customers={customers}
           onSubmit={(formData) => {
             saveService(formData)
             setEditingService(null)
