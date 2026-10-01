@@ -657,6 +657,27 @@ autenticación. El control real de acceso, cuentas, contraseñas, JWT y roles
 seguros queda pendiente para la Fase 3.
 
 
+18. CONFIGURACION DINAMICA DEL SALON
+------------------------------------
+
+El administrador ahora tiene una vista de Configuración para modificar:
+
+- Nombres del personal.
+- Porcentaje de liquidación de cada persona.
+- Notas de comisión.
+- Tipos de servicio disponibles en el formulario.
+
+La configuración se guarda en la clave localStorage:
+
+- hairsalon_v7_settings
+
+La liquidación utiliza los porcentajes guardados y distribuye los remanentes
+de empleados no propietarios entre los perfiles marcados como dueños. Si no
+existe configuración válida, se usan los valores iniciales de Jhon, Nelly y
+Luz. La configuración sigue siendo local y está preparada para migrarse
+posteriormente a una tabla de personal y configuración en backend.
+
+
 16. PROMOCION DE BARBERIA EN LA CUARTA VISITA
 ----------------------------------------------
 

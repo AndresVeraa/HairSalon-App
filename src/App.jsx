@@ -10,7 +10,9 @@ import LoyaltyPanel from './components/loyalty/LoyaltyPanel'
 import ClientWallet from './components/loyalty/ClientWallet'
 import AdminView from './components/auth/AdminView'
 import ClientView from './components/auth/ClientView'
+import SettingsPanel from './components/settings/SettingsPanel'
 import { calculateDailyCash, calculateStaffSettlement } from './utils/settlementCalculations'
+import { readSettings, SETTINGS_STORAGE_KEY } from './utils/salonSettings'
 import { calculateMonthlyStats } from './utils/statsCalculations'
 import {
   appointmentStorageKey,
@@ -44,6 +46,7 @@ export default function App() {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [role, setRole] = useState('admin')
   const [walletCustomerId, setWalletCustomerId] = useState(null)
+  const [settings, setSettings] = useState(() => readSettings())
 
   useEffect(() => writeStorageArray(window.localStorage, serviceStorageKey, services), [services])
   useEffect(() => writeStorageArray(window.localStorage, appointmentStorageKey, appointments), [appointments])
@@ -51,7 +54,10 @@ export default function App() {
   useEffect(() => writeStorageArray(window.localStorage, LOYALTY_STORAGE_KEYS.points, pointsLedger), [pointsLedger])
 
   const cash = useMemo(() => calculateDailyCash(services), [services])
-  const staff = useMemo(() => calculateStaffSettlement(services), [services])
+  const staff = useMemo(
+    () => calculateStaffSettlement(services, new Date(), settings.staff),
+    [services, settings.staff],
+  )
   const monthly = useMemo(() => calculateMonthlyStats(services), [services])
   const filteredServices = useMemo(
     () =>
@@ -195,6 +201,16 @@ export default function App() {
           onCloseProfile={() => setSelectedCustomer(null)}
         />
       )}
+      {role === 'admin' && view === 'settings' && (
+        <SettingsPanel
+          settings={settings}
+          onSave={(nextSettings) => {
+            setSettings(nextSettings)
+            window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(nextSettings))
+            setView('list')
+          }}
+        />
+      )}
       {role === 'client' && view === 'wallet' && (
         <ClientWallet customers={customers} customerId={walletCustomerId} onCustomerChange={setWalletCustomerId} />
       )}
@@ -215,6 +231,8 @@ export default function App() {
         <ServiceForm
           initialService={serviceDraft}
           customers={customers}
+          staffMembers={settings.staff.map((member) => member.name)}
+          serviceTypes={settings.serviceTypes}
           onSubmit={saveService}
           onCancel={() => {
             setServiceDraft(null)
@@ -226,6 +244,8 @@ export default function App() {
       <EditServiceModal
         service={editingService}
         customers={customers}
+        staffMembers={settings.staff.map((member) => member.name)}
+        serviceTypes={settings.serviceTypes}
         onSubmit={(formData) => {
           saveService(formData)
           setEditingService(null)

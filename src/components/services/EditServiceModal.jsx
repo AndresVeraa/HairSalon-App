@@ -1,6 +1,6 @@
 import ServiceForm from './ServiceForm'
 
-export default function EditServiceModal({ service, customers, onSubmit, onCancel }) {
+export default function EditServiceModal({ service, customers, staffMembers, serviceTypes, onSubmit, onCancel }) {
   if (!service) return null
   return (
     <div
@@ -11,7 +11,14 @@ export default function EditServiceModal({ service, customers, onSubmit, onCance
     >
       <div className="min-h-full flex items-center justify-center">
         <div className="w-full max-w-xl">
-          <ServiceForm initialService={service} customers={customers} onSubmit={onSubmit} onCancel={onCancel} />
+          <ServiceForm
+            initialService={service}
+            customers={customers}
+            staffMembers={staffMembers}
+            serviceTypes={serviceTypes}
+            onSubmit={onSubmit}
+            onCancel={onCancel}
+          />
         </div>
       </div>
     </div>

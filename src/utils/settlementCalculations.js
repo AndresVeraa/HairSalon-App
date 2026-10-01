@@ -22,25 +22,24 @@ export const calculateDailyCash = (services, date = new Date()) => {
   )
 }
 
-export const calculateStaffSettlement = (services, date = new Date()) => {
+export const calculateStaffSettlement = (services, date = new Date(), staffConfig = STAFF_CONFIG) => {
   const todayServices = services.filter((service) => new Date(service.date).toDateString() === date.toDateString())
-  const totals = STAFF_CONFIG.map((staff) => {
+  const totals = staffConfig.map((staff) => {
     const staffServices = todayServices.filter((service) => service.staff === staff.name)
     return {
       ...staff,
+      percentage: staff.percentage > 1 ? staff.percentage / 100 : staff.percentage,
       total: staffServices.reduce((sum, service) => sum + toAmount(service.price), 0),
       count: staffServices.length,
     }
   })
 
-  const jhon = totals.find((staff) => staff.name === 'Jhon barber')
-  const nelly = totals.find((staff) => staff.name === 'Nelly peluquera')
+  const nonOwners = totals.filter((staff) => !staff.isOwner)
   return totals.map((staff) => ({
     ...staff,
     commission: staff.isOwner
       ? staff.total +
-        (jhon.total - Math.round(jhon.total * jhon.percentage)) +
-        (nelly.total - Math.round(nelly.total * nelly.percentage))
+        nonOwners.reduce((sum, member) => sum + member.total - Math.round(member.total * member.percentage), 0)
       : Math.round(staff.total * staff.percentage),
   }))
 }

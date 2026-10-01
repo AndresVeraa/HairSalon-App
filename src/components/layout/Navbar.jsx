@@ -1,5 +1,5 @@
 import { createElement } from 'react'
-import { BarChart3, CalendarCheck, History, PlusCircle, Sparkles } from 'lucide-react'
+import { BarChart3, CalendarCheck, History, PlusCircle, Settings, Sparkles } from 'lucide-react'
 
 const items = [
   ['list', History, 'Liquidación'],
@@ -7,6 +7,7 @@ const items = [
   ['stats', BarChart3, 'Estadísticas'],
   ['add', PlusCircle, 'Registro'],
   ['loyalty', Sparkles, 'Fidelización'],
+  ['settings', Settings, 'Configuración'],
 ]
 
 export default function Navbar({ view, onChange }) {

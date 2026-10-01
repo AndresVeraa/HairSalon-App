@@ -42,4 +42,16 @@ describe('settlement calculations', () => {
     expect(calculateDailyCash(services, today).total).toBe(202)
     expect(calculateStaffSettlement(services, today).map((staff) => staff.commission)).toEqual([61, 51, 90])
   })
+
+  it('uses custom staff percentages and owner settings', () => {
+    const services = [{ date: today.toISOString(), price: 100000, paymentMethod: 'Efectivo', staff: 'Barbero' }]
+    const staff = [
+      { name: 'Barbero', percentage: 70, isOwner: false },
+      { name: 'Dueña', percentage: 100, isOwner: true },
+    ]
+    expect(calculateStaffSettlement(services, today, staff)).toEqual([
+      expect.objectContaining({ name: 'Barbero', commission: 70000 }),
+      expect.objectContaining({ name: 'Dueña', commission: 30000 }),
+    ])
+  })
 })

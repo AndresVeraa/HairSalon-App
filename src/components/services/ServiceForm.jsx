@@ -6,7 +6,14 @@ const toDateTimeInputValue = (date) => {
   return new Date(parsed.getTime() - offset * 60 * 1000).toISOString().slice(0, 16)
 }
 
-export default function ServiceForm({ initialService, customers = [], onSubmit, onCancel }) {
+export default function ServiceForm({
+  initialService,
+  customers = [],
+  staffMembers = [],
+  serviceTypes = [],
+  onSubmit,
+  onCancel,
+}) {
   return (
     <div className="max-w-xl mx-auto animate-in zoom-in-95">
       <div className="bg-white p-8 md:p-10 rounded-[3rem] shadow-2xl border border-rose-50">
@@ -43,7 +50,7 @@ export default function ServiceForm({ initialService, customers = [], onSubmit, 
                 defaultValue={initialService?.staff || 'Jhon barber'}
                 className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold"
               >
-                {['Jhon barber', 'Nelly peluquera', 'Luz peluquera'].map((item) => (
+                {staffMembers.map((item) => (
                   <option key={item}>{item}</option>
                 ))}
               </select>
@@ -55,7 +62,7 @@ export default function ServiceForm({ initialService, customers = [], onSubmit, 
                 defaultValue={initialService?.type || 'Corte'}
                 className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold"
               >
-                {['Corte', 'Corte + barba', 'Peinado', 'Cepillado', 'Coloración', 'Tratamiento', 'Otro'].map((item) => (
+                {serviceTypes.map((item) => (
                   <option key={item}>{item}</option>
                 ))}
               </select>
