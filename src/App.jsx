@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Crown, MoreHorizontal, Palette, Scissors, Sparkles, Wind } from 'lucide-react'
-import Header from './components/layout/Header'
-import Navbar from './components/layout/Navbar'
 import SettlementSummary from './components/settlement/SettlementSummary'
 import ServiceForm from './components/services/ServiceForm'
 import EditServiceModal from './components/services/EditServiceModal'
@@ -10,6 +8,8 @@ import AppointmentList from './components/appointments/AppointmentList'
 import MonthlyBarChart from './components/stats/MonthlyBarChart'
 import LoyaltyPanel from './components/loyalty/LoyaltyPanel'
 import ClientWallet from './components/loyalty/ClientWallet'
+import AdminView from './components/auth/AdminView'
+import ClientView from './components/auth/ClientView'
 import { calculateDailyCash, calculateStaffSettlement } from './utils/settlementCalculations'
 import { calculateMonthlyStats } from './utils/statsCalculations'
 import {
@@ -156,128 +156,122 @@ export default function App() {
     setSelectedCustomer(customer)
   }
 
-  return (
-    <div className="brand-shell min-h-screen bg-pink-50 text-slate-900 font-sans selection:bg-rose-200">
-      <div className="max-w-4xl mx-auto px-4 py-6 md:py-10">
-        <div className="flex flex-col lg:flex-row justify-between items-center mb-8 gap-6">
-          <Header
-            role={role}
-            onRoleChange={(nextRole) => {
-              setRole(nextRole)
-              setView(nextRole === 'client' ? 'wallet' : 'list')
+  const handleRoleChange = (nextRole) => {
+    setRole(nextRole)
+    setView(nextRole === 'client' ? 'wallet' : 'list')
+  }
+
+  const handleViewChange = (nextView) => {
+    setEditingService(null)
+    setServiceDraft(null)
+    setPendingAppointmentId(null)
+    setSelectedCustomer(null)
+    setView(nextView)
+  }
+
+  const content = (
+    <>
+      {role === 'admin' && view === 'list' && (
+        <div className="space-y-6 animate-in fade-in duration-500">
+          <SettlementSummary cash={cash} staff={staff} />
+          <ServiceList
+            services={filteredServices}
+            searchTerm={searchTerm}
+            onSearch={setSearchTerm}
+            onRemove={removeService}
+            onEdit={(service) => {
+              setEditingService(service)
             }}
+            getIcon={getIcon}
           />
-          {role === 'admin' && (
-            <Navbar
-              view={view}
-              onChange={(nextView) => {
-                setEditingService(null)
-                setServiceDraft(null)
-                setPendingAppointmentId(null)
-                setSelectedCustomer(null)
-                setView(nextView)
-              }}
-            />
-          )}
         </div>
-        {role === 'admin' && view === 'list' && (
-          <div className="space-y-6 animate-in fade-in duration-500">
-            <SettlementSummary cash={cash} staff={staff} />
-            <ServiceList
-              services={filteredServices}
-              searchTerm={searchTerm}
-              onSearch={setSearchTerm}
-              onRemove={removeService}
-              onEdit={(service) => {
-                setEditingService(service)
-              }}
-              getIcon={getIcon}
-            />
-          </div>
-        )}
-        {role === 'admin' && view === 'loyalty' && (
-          <LoyaltyPanel
-            customers={customers}
-            onCreate={createLoyaltyCustomer}
-            onSelect={setSelectedCustomer}
-            selectedCustomer={selectedCustomer}
-            onCloseProfile={() => setSelectedCustomer(null)}
-          />
-        )}
-        {role === 'client' && view === 'wallet' && (
-          <ClientWallet customers={customers} customerId={walletCustomerId} onCustomerChange={setWalletCustomerId} />
-        )}
-        {role === 'admin' && view === 'stats' && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-            <div className="bg-[#121212] p-8 rounded-[2.5rem] shadow-xl shadow-stone-900/20 text-white flex items-center justify-between border border-[#c9a15c]/30">
-              <div>
-                <p className="text-xs font-black text-rose-100 uppercase tracking-widest mb-2">
-                  Total {monthly.monthName}
-                </p>
-                <h2 className="text-5xl font-black">${monthly.incomeMonthly.toLocaleString('es-CO')}</h2>
-              </div>
-            </div>
-            <MonthlyBarChart dailyData={monthly.dailyData} maxDaily={monthly.maxDaily} />
-          </div>
-        )}
-        {role === 'admin' && view === 'add' && (
-          <ServiceForm
-            initialService={serviceDraft}
-            customers={customers}
-            onSubmit={saveService}
-            onCancel={() => {
-              setServiceDraft(null)
-              setPendingAppointmentId(null)
-              setView('list')
-            }}
-          />
-        )}
-        <EditServiceModal
-          service={editingService}
+      )}
+      {role === 'admin' && view === 'loyalty' && (
+        <LoyaltyPanel
           customers={customers}
-          onSubmit={(formData) => {
-            saveService(formData)
-            setEditingService(null)
-          }}
-          onCancel={() => setEditingService(null)}
+          onCreate={createLoyaltyCustomer}
+          onSelect={setSelectedCustomer}
+          selectedCustomer={selectedCustomer}
+          onCloseProfile={() => setSelectedCustomer(null)}
         />
-        {role === 'admin' && view === 'appointments' && (
-          <div className="space-y-6 animate-in fade-in">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-left">
-              <div className="w-full">
-                <h2 className="text-2xl font-black text-slate-800">Próximas Citas Bot</h2>
-                <p className="text-sm text-slate-400 font-medium italic">Sincronizado con Chatbot de WhatsApp</p>
-              </div>
-              <button
-                onClick={() =>
-                  setAppointments((current) => [
-                    {
-                      id: Date.now(),
-                      client: 'Cliente Simulada',
-                      type: 'Coloración',
-                      date: new Date().toISOString(),
-                      source: 'WhatsApp Bot',
-                      status: 'Pendiente',
-                    },
-                    ...current,
-                  ])
-                }
-                className="bg-green-500 text-white px-5 py-2.5 rounded-2xl font-black text-xs uppercase"
-              >
-                Simular Cita WhatsApp
-              </button>
+      )}
+      {role === 'client' && view === 'wallet' && (
+        <ClientWallet customers={customers} customerId={walletCustomerId} onCustomerChange={setWalletCustomerId} />
+      )}
+      {role === 'admin' && view === 'stats' && (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+          <div className="bg-[#121212] p-8 rounded-[2.5rem] shadow-xl shadow-stone-900/20 text-white flex items-center justify-between border border-[#c9a15c]/30">
+            <div>
+              <p className="text-xs font-black text-rose-100 uppercase tracking-widest mb-2">
+                Total {monthly.monthName}
+              </p>
+              <h2 className="text-5xl font-black">${monthly.incomeMonthly.toLocaleString('es-CO')}</h2>
             </div>
-            <AppointmentList
-              appointments={appointments}
-              onConfirm={confirmAppointment}
-              onReject={(id) => setAppointments((current) => current.filter((appointment) => appointment.id !== id))}
-            />
           </div>
-        )}
-        <footer className="mt-16 -mx-4 px-4 pt-8 text-center bg-[#0b0b0b] text-[#a59e92] text-[10px] font-black uppercase tracking-[0.35em] pb-10">
-          Hair Style • Salón &amp; Barbería • Tu mejor versión, con confianza.
-        </footer>
-      </div>
-    </div>
+          <MonthlyBarChart dailyData={monthly.dailyData} maxDaily={monthly.maxDaily} />
+        </div>
+      )}
+      {role === 'admin' && view === 'add' && (
+        <ServiceForm
+          initialService={serviceDraft}
+          customers={customers}
+          onSubmit={saveService}
+          onCancel={() => {
+            setServiceDraft(null)
+            setPendingAppointmentId(null)
+            setView('list')
+          }}
+        />
+      )}
+      <EditServiceModal
+        service={editingService}
+        customers={customers}
+        onSubmit={(formData) => {
+          saveService(formData)
+          setEditingService(null)
+        }}
+        onCancel={() => setEditingService(null)}
+      />
+      {role === 'admin' && view === 'appointments' && (
+        <div className="space-y-6 animate-in fade-in">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-left">
+            <div className="w-full">
+              <h2 className="text-2xl font-black text-slate-800">Próximas Citas Bot</h2>
+              <p className="text-sm text-slate-400 font-medium italic">Sincronizado con Chatbot de WhatsApp</p>
+            </div>
+            <button
+              onClick={() =>
+                setAppointments((current) => [
+                  {
+                    id: Date.now(),
+                    client: 'Cliente Simulada',
+                    type: 'Coloración',
+                    date: new Date().toISOString(),
+                    source: 'WhatsApp Bot',
+                    status: 'Pendiente',
+                  },
+                  ...current,
+                ])
+              }
+              className="bg-green-500 text-white px-5 py-2.5 rounded-2xl font-black text-xs uppercase"
+            >
+              Simular Cita WhatsApp
+            </button>
+          </div>
+          <AppointmentList
+            appointments={appointments}
+            onConfirm={confirmAppointment}
+            onReject={(id) => setAppointments((current) => current.filter((appointment) => appointment.id !== id))}
+          />
+        </div>
+      )}
+    </>
+  )
+  return role === 'admin' ? (
+    <AdminView view={view} onViewChange={handleViewChange} onRoleChange={handleRoleChange}>
+      {content}
+    </AdminView>
+  ) : (
+    <ClientView onRoleChange={handleRoleChange}>{content}</ClientView>
   )
 }

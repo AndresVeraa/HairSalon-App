@@ -684,3 +684,22 @@ posteriores no vuelven a recibir descuento dentro de esta promoción.
 
 La promoción solo se calcula cuando el servicio se asocia a una tarjeta de
 fidelidad. Servicios sin cliente asociado no incrementan el contador.
+
+
+17. VISTAS SEPARADAS POR ROL
+----------------------------
+
+La interfaz ahora utiliza shells independientes:
+
+- AdminView:
+  - Cabecera administrativa.
+  - Navegación de Liquidación, Citas Bot, Estadísticas, Registro y
+    Fidelización.
+  - Footer identificado como Administración.
+- ClientView:
+  - Cabecera de cliente.
+  - Solo muestra Mi Wallet y la tarjeta de fidelidad.
+  - Footer identificado como Mi Wallet.
+
+El selector de rol sigue siendo local y sirve para probar ambas experiencias
+en el mismo navegador. No representa todavía un sistema de autenticación real.
