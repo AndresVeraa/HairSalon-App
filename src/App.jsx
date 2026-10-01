@@ -20,7 +20,12 @@ import {
   writeStorageArray,
   serviceStorageKey,
 } from './utils/storageHelper'
-import { addPointsTransaction, createCustomer, LOYALTY_STORAGE_KEYS } from './utils/loyaltyCalculations'
+import {
+  addPointsTransaction,
+  calculateBarberPromotion,
+  createCustomer,
+  LOYALTY_STORAGE_KEYS,
+} from './utils/loyaltyCalculations'
 
 const icons = { Corte: Scissors, Peinado: Crown, Cepillado: Wind, Coloración: Palette, Tratamiento: Sparkles }
 
@@ -59,7 +64,7 @@ export default function App() {
   )
 
   const saveService = (formData) => {
-    const values = {
+    const formValues = {
       client: formData.get('client'),
       type: formData.get('type'),
       price: Math.round(Number.parseFloat(formData.get('price') || 0)),
@@ -68,6 +73,20 @@ export default function App() {
       notes: formData.get('notes') || '',
       customerId: formData.get('customerId') || '',
       date: formData.get('date') ? new Date(formData.get('date')).toISOString() : new Date().toISOString(),
+    }
+    const promotion = formValues.customerId
+      ? calculateBarberPromotion(services, formValues.customerId, formValues)
+      : {
+          visitNumber: 0,
+          originalPrice: formValues.price,
+          discountPercentage: 0,
+          discountAmount: 0,
+          finalPrice: formValues.price,
+        }
+    const values = {
+      ...formValues,
+      price: promotion.finalPrice,
+      ...promotion,
     }
     if (editingService) {
       setServices((current) =>

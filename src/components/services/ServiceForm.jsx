@@ -55,7 +55,7 @@ export default function ServiceForm({ initialService, customers = [], onSubmit, 
                 defaultValue={initialService?.type || 'Corte'}
                 className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold"
               >
-                {['Corte', 'Peinado', 'Cepillado', 'Coloración', 'Tratamiento', 'Otro'].map((item) => (
+                {['Corte', 'Corte + barba', 'Peinado', 'Cepillado', 'Coloración', 'Tratamiento', 'Otro'].map((item) => (
                   <option key={item}>{item}</option>
                 ))}
               </select>
@@ -70,6 +70,9 @@ export default function ServiceForm({ initialService, customers = [], onSubmit, 
               defaultValue={toDateTimeInputValue(initialService?.date || new Date())}
               className="w-full px-6 py-4 bg-slate-50 border-0 rounded-2xl font-bold"
             />
+            <span className="block text-[10px] font-medium text-slate-400">
+              Barbería: Corte $18.000 · Corte + barba $23.000
+            </span>
           </label>
           <label className="block text-left space-y-2">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">

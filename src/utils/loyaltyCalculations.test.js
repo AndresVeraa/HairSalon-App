@@ -1,10 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { addPointsTransaction, createCustomer, getMembershipTier, getPointsForService } from './loyaltyCalculations'
+import {
+  addPointsTransaction,
+  calculateBarberPromotion,
+  createCustomer,
+  getMembershipTier,
+  getPointsForService,
+} from './loyaltyCalculations'
 
 describe('loyalty calculations', () => {
   it('creates a customer with the welcome balance', () => {
     const customer = createCustomer({ name: ' Maria ', phone: '300123', email: 'maria@example.com' })
-    expect(customer).toMatchObject({ name: 'Maria', phone: '300123', total_points: 20, membership_tier: 'Plata' })
+    expect(customer).toMatchObject({
+      name: 'Maria',
+      phone: '300123',
+      total_points: 20,
+      membership_tier: 'Plata',
+      barber_visits: 0,
+    })
     expect(customer.customer_id).toMatch(/^cust_/)
   })
 
@@ -24,5 +36,26 @@ describe('loyalty calculations', () => {
       staff_name: 'Nelly peluquera',
     })
     expect(getMembershipTier(300)).toBe('Diamante')
+  })
+
+  it('applies 5% only on the fourth barber visit', () => {
+    const services = [
+      { customerId: 'cust_1', staff: 'Jhon barber', type: 'Corte', price: 18000 },
+      { customerId: 'cust_1', staff: 'Jhon barber', type: 'Corte', price: 18000 },
+      { customerId: 'cust_1', staff: 'Jhon barber', type: 'Corte + barba', price: 23000 },
+    ]
+    expect(
+      calculateBarberPromotion(services, 'cust_1', { staff: 'Jhon barber', type: 'Corte', price: 18000 }),
+    ).toMatchObject({
+      visitNumber: 4,
+      originalPrice: 18000,
+      discountPercentage: 5,
+      discountAmount: 900,
+      finalPrice: 17100,
+    })
+    expect(
+      calculateBarberPromotion(services, 'cust_1', { staff: 'Nelly peluquera', type: 'Corte', price: 18000 })
+        .discountAmount,
+    ).toBe(0)
   })
 })

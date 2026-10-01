@@ -10,6 +10,9 @@ export default function ServiceItem({ service, icon, onRemove, onEdit }) {
         <div>
           <h4 className="text-lg font-black text-slate-800">{service.client}</h4>
           {service.notes && <p className="mt-1 text-xs text-slate-400 truncate max-w-[16rem]">{service.notes}</p>}
+          {service.discountAmount > 0 && (
+            <p className="mt-1 text-xs font-bold text-[#8b5e3c]">5% de descuento · Visita {service.visitNumber}</p>
+          )}
           <div className="flex flex-wrap items-center gap-2 mt-1">
             <span className="text-[9px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded uppercase">
               {service.type}
@@ -27,7 +30,14 @@ export default function ServiceItem({ service, icon, onRemove, onEdit }) {
         </div>
       </div>
       <div className="flex items-center justify-between w-full sm:w-auto gap-3 border-t sm:border-t-0 pt-4 sm:pt-0">
-        <span className="text-2xl font-black text-slate-800">${Number(service.price).toLocaleString('es-CO')}</span>
+        <div className="text-right">
+          {service.discountAmount > 0 && (
+            <p className="text-xs text-slate-400 line-through">
+              ${Number(service.originalPrice).toLocaleString('es-CO')}
+            </p>
+          )}
+          <span className="text-2xl font-black text-slate-800">${Number(service.price).toLocaleString('es-CO')}</span>
+        </div>
         <button onClick={() => onEdit(service)} className="text-slate-400 hover:text-rose-500 px-2 font-bold text-xs">
           Editar
         </button>

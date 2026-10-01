@@ -655,3 +655,32 @@ credenciales de emisor y endpoints seguros.
 La selección de rol es una demostración local y no debe considerarse
 autenticación. El control real de acceso, cuentas, contraseñas, JWT y roles
 seguros queda pendiente para la Fase 3.
+
+
+16. PROMOCION DE BARBERIA EN LA CUARTA VISITA
+----------------------------------------------
+
+La tarjeta de fidelización cuenta las visitas de barbería asociadas al cliente.
+Para este primer alcance solo califican:
+
+- Jhon barber como personal.
+- Servicio "Corte".
+- Servicio "Corte + barba".
+
+Precios de referencia configurados para la operación actual:
+
+- Corte: $18.000 COP.
+- Corte + barba: $23.000 COP.
+
+En la cuarta visita de barbería se aplica una sola vez un descuento del 5%:
+
+- Corte de $18.000: descuento de $900; total $17.100.
+- Corte + barba de $23.000: descuento de $1.150; total $21.850.
+
+El servicio guarda el precio original, precio final, porcentaje descontado,
+valor descontado y número de visita. La tarjeta del cliente muestra el avance
+"X de 4 visitas" y avisa cuando el beneficio ya fue aplicado. Las visitas
+posteriores no vuelven a recibir descuento dentro de esta promoción.
+
+La promoción solo se calcula cuando el servicio se asocia a una tarjeta de
+fidelidad. Servicios sin cliente asociado no incrementan el contador.

@@ -84,6 +84,15 @@ export default function ClientWallet({ customers, customerId, onCustomerChange }
           </div>
         </div>
       </div>
+      <div className="rounded-3xl border border-[#c9a15c]/25 bg-[#f7f2ea] p-5">
+        <p className="text-xs font-black uppercase tracking-widest text-[#8b5e3c]">Beneficio de barbería</p>
+        <p className="mt-2 text-lg font-black text-slate-800">{customer.barber_visits || 0} de 4 visitas</p>
+        <p className="mt-1 text-sm text-slate-500">
+          {(customer.barber_visits || 0) < 4
+            ? `Te faltan ${4 - (customer.barber_visits || 0)} visita(s) para obtener 5% de descuento.`
+            : 'El descuento del 5% fue aplicado en tu cuarta visita.'}
+        </p>
+      </div>
       <button
         type="button"
         onClick={downloadWalletCard}
