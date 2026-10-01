@@ -1,8 +1,19 @@
+const toDateTimeInputValue = (date) => {
+  if (!date) return ''
+  const parsed = new Date(date)
+  if (Number.isNaN(parsed.getTime())) return ''
+  const offset = parsed.getTimezoneOffset()
+  return new Date(parsed.getTime() - offset * 60 * 1000).toISOString().slice(0, 16)
+}
+
 export default function ServiceForm({ initialService, onSubmit, onCancel }) {
   return (
     <div className="max-w-xl mx-auto animate-in zoom-in-95">
       <div className="bg-white p-8 md:p-10 rounded-[3rem] shadow-2xl border border-rose-50">
-        <h2 className="text-3xl font-black text-slate-800 mb-8 italic text-left">
+        <h2
+          id={initialService ? 'edit-service-title' : undefined}
+          className="text-3xl font-black text-slate-800 mb-8 italic text-left"
+        >
           {initialService ? 'Editar Registro' : 'Nuevo Registro'}
         </h2>
         <form
@@ -50,6 +61,16 @@ export default function ServiceForm({ initialService, onSubmit, onCancel }) {
               </select>
             </label>
           </div>
+          <label className="block text-left space-y-2">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Fecha y hora</span>
+            <input
+              name="date"
+              type="datetime-local"
+              required
+              defaultValue={toDateTimeInputValue(initialService?.date || new Date())}
+              className="w-full px-6 py-4 bg-slate-50 border-0 rounded-2xl font-bold"
+            />
+          </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
             <label className="space-y-2">
               <span className="text-[10px] font-black text-slate-400 uppercase ml-2">Pago</span>

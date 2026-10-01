@@ -4,6 +4,7 @@ import Header from './components/layout/Header'
 import Navbar from './components/layout/Navbar'
 import SettlementSummary from './components/settlement/SettlementSummary'
 import ServiceForm from './components/services/ServiceForm'
+import EditServiceModal from './components/services/EditServiceModal'
 import ServiceList from './components/services/ServiceList'
 import AppointmentList from './components/appointments/AppointmentList'
 import MonthlyBarChart from './components/stats/MonthlyBarChart'
@@ -25,6 +26,8 @@ export default function App() {
   const [view, setView] = useState('list')
   const [searchTerm, setSearchTerm] = useState('')
   const [editingService, setEditingService] = useState(null)
+  const [serviceDraft, setServiceDraft] = useState(null)
+  const [pendingAppointmentId, setPendingAppointmentId] = useState(null)
 
   useEffect(() => writeStorageArray(window.localStorage, serviceStorageKey, services), [services])
   useEffect(() => writeStorageArray(window.localStorage, appointmentStorageKey, appointments), [appointments])
@@ -50,6 +53,7 @@ export default function App() {
       paymentMethod: formData.get('paymentMethod'),
       staff: formData.get('staff'),
       notes: formData.get('notes') || '',
+      date: formData.get('date') ? new Date(formData.get('date')).toISOString() : new Date().toISOString(),
     }
     if (editingService) {
       setServices((current) =>
@@ -57,7 +61,11 @@ export default function App() {
       )
       setEditingService(null)
     } else {
-      setServices((current) => [{ ...values, id: Date.now(), date: new Date().toISOString() }, ...current])
+      setServices((current) => [{ ...values, id: Date.now() }, ...current])
+      if (pendingAppointmentId !== null) {
+        setAppointments((current) => current.filter((appointment) => appointment.id !== pendingAppointmentId))
+        setPendingAppointmentId(null)
+      }
     }
     setView('list')
   }
@@ -73,8 +81,7 @@ export default function App() {
   }
 
   const confirmAppointment = (appointment) => {
-    setAppointments((current) => current.filter((item) => item.id !== appointment.id))
-    setEditingService({
+    setServiceDraft({
       client: appointment.client,
       type: appointment.type,
       date: appointment.date,
@@ -83,6 +90,7 @@ export default function App() {
       price: '',
       notes: '',
     })
+    setPendingAppointmentId(appointment.id)
     setView('add')
   }
 
@@ -95,6 +103,8 @@ export default function App() {
             view={view}
             onChange={(nextView) => {
               setEditingService(null)
+              setServiceDraft(null)
+              setPendingAppointmentId(null)
               setView(nextView)
             }}
           />
@@ -109,7 +119,6 @@ export default function App() {
               onRemove={removeService}
               onEdit={(service) => {
                 setEditingService(service)
-                setView('add')
               }}
               getIcon={getIcon}
             />
@@ -130,14 +139,23 @@ export default function App() {
         )}
         {view === 'add' && (
           <ServiceForm
-            initialService={editingService}
+            initialService={serviceDraft}
             onSubmit={saveService}
             onCancel={() => {
-              setEditingService(null)
+              setServiceDraft(null)
+              setPendingAppointmentId(null)
               setView('list')
             }}
           />
         )}
+        <EditServiceModal
+          service={editingService}
+          onSubmit={(formData) => {
+            saveService(formData)
+            setEditingService(null)
+          }}
+          onCancel={() => setEditingService(null)}
+        />
         {view === 'appointments' && (
           <div className="space-y-6 animate-in fade-in">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-left">

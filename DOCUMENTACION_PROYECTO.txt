@@ -545,3 +545,25 @@ También se añadieron:
 En esta fase también se dejó disponible la edición de servicios desde el
 formulario reutilizado. La integración con backend, autenticación y esquema
 relacional queda deliberadamente para las fases posteriores.
+
+
+12. FASE 2: SERVICIOS Y CITAS (IMPLEMENTADA)
+---------------------------------------------
+
+Se completó el flujo de gestión de servicios y citas:
+
+- La edición de un servicio se abre en un diálogo modal accesible.
+- El formulario de edición conserva id y fecha originales.
+- El formulario de registro permite modificar fecha y hora.
+- Las notas se pueden crear, editar y visualizar en el listado.
+- Los datos iniciales de un servicio se reutilizan en el formulario.
+- Al confirmar una cita se abre Registro con cliente, tipo, fecha y hora
+  prellenados.
+- La cita confirmada solo se elimina después de guardar el servicio.
+- Si se cancela el formulario, la cita permanece disponible.
+- La fecha elegida se guarda en formato ISO para conservar compatibilidad con
+  los cálculos diarios y mensuales.
+
+La conversión todavía requiere que el usuario complete el precio, la persona
+que atendió y el método de pago, porque esos datos no forman parte del modelo
+actual de una cita simulada.

@@ -9,6 +9,7 @@ export default function ServiceItem({ service, icon, onRemove, onEdit }) {
         </div>
         <div>
           <h4 className="text-lg font-black text-slate-800">{service.client}</h4>
+          {service.notes && <p className="mt-1 text-xs text-slate-400 truncate max-w-[16rem]">{service.notes}</p>}
           <div className="flex flex-wrap items-center gap-2 mt-1">
             <span className="text-[9px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded uppercase">
               {service.type}
