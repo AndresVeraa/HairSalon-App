@@ -135,7 +135,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-pink-50 text-slate-900 font-sans selection:bg-rose-200">
+    <div className="brand-shell min-h-screen bg-pink-50 text-slate-900 font-sans selection:bg-rose-200">
       <div className="max-w-4xl mx-auto px-4 py-6 md:py-10">
         <div className="flex flex-col lg:flex-row justify-between items-center mb-8 gap-6">
           <Header />
@@ -176,7 +176,7 @@ export default function App() {
         )}
         {view === 'stats' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-            <div className="bg-rose-500 p-8 rounded-[2.5rem] shadow-xl shadow-rose-200 text-white flex items-center justify-between">
+            <div className="bg-[#121212] p-8 rounded-[2.5rem] shadow-xl shadow-stone-900/20 text-white flex items-center justify-between border border-[#c9a15c]/30">
               <div>
                 <p className="text-xs font-black text-rose-100 uppercase tracking-widest mb-2">
                   Total {monthly.monthName}
@@ -241,8 +241,8 @@ export default function App() {
             />
           </div>
         )}
-        <footer className="mt-16 text-center opacity-20 text-[10px] font-black uppercase tracking-[0.5em] pb-10">
-          HairSalon Pro v7.7 • 2025
+        <footer className="mt-16 -mx-4 px-4 pt-8 text-center bg-[#0b0b0b] text-[#a59e92] text-[10px] font-black uppercase tracking-[0.35em] pb-10">
+          Hair Style • Salón &amp; Barbería • Tu mejor versión, con confianza.
         </footer>
       </div>
     </div>

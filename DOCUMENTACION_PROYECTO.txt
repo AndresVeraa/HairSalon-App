@@ -601,3 +601,30 @@ Reglas locales actuales:
 Este prototipo todavía no integra NFC físico, OTP, WhatsApp, backend,
 recompensas canjeables ni sincronización multidispositivo. Esas funciones se
 reservan para las fases posteriores.
+
+
+14. IDENTIDAD VISUAL HAIR STYLE
+--------------------------------
+
+La interfaz fue alineada con la identidad "Hair Style — Salón & Barbería":
+
+- Eslogan: "Tu mejor versión, con confianza."
+- Posicionamiento visual: lujo cálido, editorial y unisex.
+- Paleta principal:
+  - Carbón #121212 y negro profundo #0b0b0b.
+  - Beige lino #F0E7DA y crema #F7F2EA.
+  - Oro champagne #C9A15C y oro claro #E4C88A.
+  - Madera tostada #8B5E3C como acento disponible.
+- Tipografía:
+  - Playfair Display para titulares y marca.
+  - Montserrat para navegación, formularios, etiquetas y lectura.
+- Cabecera con monograma visual HS, nombre Hair Style y descriptor
+  "Salón & Barbería".
+- Navegación y footer en modo oscuro con bordes dorados sutiles.
+- Tarjetas y fondos con superficies crema, espacio negativo y contrastes
+  dorados en lugar del estilo rosado inicial.
+- Título del documento web actualizado a "Hair Style — Salón & Barbería".
+
+El monograma actual es una representación CSS/HTML provisional. El isotipo
+definitivo con las iniciales entrelazadas y el barber pole debe sustituirse por
+un recurso SVG o imagen de marca cuando exista el archivo oficial.

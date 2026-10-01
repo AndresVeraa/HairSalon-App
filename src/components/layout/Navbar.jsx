@@ -11,12 +11,12 @@ const items = [
 
 export default function Navbar({ view, onChange }) {
   return (
-    <nav className="flex bg-white/70 backdrop-blur-md p-1 rounded-2xl border border-white shadow-sm overflow-x-auto w-full md:w-auto">
+    <nav className="flex bg-[#121212] p-1 rounded-2xl border border-[#c9a15c]/30 shadow-xl shadow-stone-900/10 overflow-x-auto w-full md:w-auto">
       {items.map(([key, Icon, label]) => (
         <button
           key={key}
           onClick={() => onChange(key)}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all ${view === key ? 'bg-white text-rose-500 shadow-sm' : 'text-slate-400'}`}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all ${view === key ? 'bg-[#f7f2ea] text-rose-500 shadow-sm' : 'text-[#a59e92]'}`}
         >
           {createElement(Icon, { size: 18 })}
           <span className="hidden sm:inline">{label}</span>

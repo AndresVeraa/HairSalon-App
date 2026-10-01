@@ -15,7 +15,7 @@ export default function QrScanner({ onScan, onError }) {
       (errorMessage) => onError?.(new Error(errorMessage)),
     )
     return () => {
-      scanner.clear().catch(() => {})
+      scanner.clear().catch((error) => console.warn('No se pudo cerrar el lector QR.', error))
     }
   }, [onError, onScan])
 

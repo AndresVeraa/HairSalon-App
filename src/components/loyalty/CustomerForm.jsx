@@ -18,7 +18,9 @@ export default function CustomerForm({ onSave, onCancel, onTokenScan }) {
           {scanMode ? 'Cerrar lector' : 'Escanear QR'}
         </button>
       </div>
-      {scanMode && <QrScanner onScan={onTokenScan} onError={() => {}} />}
+      {scanMode && (
+        <QrScanner onScan={onTokenScan} onError={(error) => console.warn('El lector QR no pudo continuar.', error)} />
+      )}
       <form
         onSubmit={(event) => {
           event.preventDefault()

@@ -2,7 +2,7 @@ import { Banknote, Smartphone, Wallet } from 'lucide-react'
 
 export default function DailyCashCard({ cash }) {
   return (
-    <div className="bg-rose-500 p-6 rounded-[2rem] shadow-xl shadow-rose-200 text-white col-span-1 md:col-span-2 flex flex-col justify-center">
+    <div className="bg-[#121212] p-6 rounded-[2rem] shadow-xl shadow-stone-900/20 text-white col-span-1 md:col-span-2 flex flex-col justify-center border border-[#c9a15c]/30">
       <div className="flex items-center justify-between mb-4 text-left">
         <div>
           <p className="text-[10px] font-black text-rose-100 uppercase tracking-widest mb-1">Caja Bruta Hoy</p>

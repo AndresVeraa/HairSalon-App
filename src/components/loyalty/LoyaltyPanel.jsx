@@ -29,7 +29,7 @@ export default function LoyaltyPanel({ customers, onCreate, onSelect, selectedCu
         />
       )}
       {selectedCustomer ? (
-        <div className="bg-rose-500 text-white p-6 rounded-[2.5rem]">
+        <div className="bg-[#121212] text-white p-6 rounded-[2.5rem] border border-[#c9a15c]/40">
           <button onClick={onCloseProfile} className="float-right text-xs font-black">
             Cerrar
           </button>
