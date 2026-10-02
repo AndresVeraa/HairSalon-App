@@ -1,7 +1,16 @@
 import { Search } from 'lucide-react'
 import ServiceItem from './ServiceItem'
 
-export default function ServiceList({ services, searchTerm, onSearch, onRemove, onEdit, getIcon }) {
+export default function ServiceList({
+  services,
+  searchTerm,
+  onSearch,
+  onRemove,
+  onEdit,
+  getIcon,
+  allowRemove,
+  allowEdit,
+}) {
   return (
     <>
       <div className="relative">
@@ -22,6 +31,8 @@ export default function ServiceList({ services, searchTerm, onSearch, onRemove, 
             icon={getIcon(service.type)}
             onRemove={onRemove}
             onEdit={onEdit}
+            allowRemove={allowRemove}
+            allowEdit={allowEdit}
           />
         ))}
       </div>

@@ -1,6 +1,6 @@
 import { Banknote, Smartphone, Trash2 } from 'lucide-react'
 
-export default function ServiceItem({ service, icon, onRemove, onEdit }) {
+export default function ServiceItem({ service, icon, onRemove, onEdit, allowRemove, allowEdit }) {
   return (
     <div className="bg-white/80 backdrop-blur-sm p-6 rounded-[2.5rem] border border-white shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 group transition-all hover:bg-white">
       <div className="flex items-center gap-6 w-full text-left">
@@ -38,12 +38,19 @@ export default function ServiceItem({ service, icon, onRemove, onEdit }) {
           )}
           <span className="text-2xl font-black text-slate-800">${Number(service.price).toLocaleString('es-CO')}</span>
         </div>
-        <button onClick={() => onEdit(service)} className="text-slate-400 hover:text-rose-500 px-2 font-bold text-xs">
-          Editar
-        </button>
-        <button onClick={() => onRemove(service.id)} className="text-slate-200 hover:text-rose-500 p-2">
-          <Trash2 size={18} />
-        </button>
+        {allowEdit && (
+          <button
+            onClick={() => onEdit(service)}
+            className="text-slate-400 hover:text-rose-500 px-2 font-bold text-xs"
+          >
+            Editar
+          </button>
+        )}
+        {allowRemove && (
+          <button onClick={() => onRemove(service.id)} className="text-slate-200 hover:text-rose-500 p-2">
+            <Trash2 size={18} />
+          </button>
+        )}
       </div>
     </div>
   )

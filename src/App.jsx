@@ -33,8 +33,12 @@ import {
   createCustomer,
   getMembershipTier,
   LOYALTY_STORAGE_KEYS,
+  WELCOME_POINTS,
 } from './utils/loyaltyCalculations'
-import { isSupabaseConfigured } from './lib/supabaseClient'
+import { isLocalDemoEnabled, isSupabaseConfigured } from './lib/supabaseClient'
+import { APPOINTMENT_STATUS, validateAppointmentRequest } from './utils/appointmentRules'
+import { mapRemoteAppointment, mapRemoteCustomer, mapRemoteService } from './utils/remoteMappers'
+import { getServiceDurationMinutes } from './utils/serviceRules'
 import {
   claimCustomerAccount,
   getCurrentProfile,
@@ -47,28 +51,34 @@ import {
 import {
   createAppointment,
   createService,
+  adjustCustomerPoints,
   getCustomerById,
+  listServices,
   listCustomers,
+  listAppointments,
   registerCustomer,
+  updateAppointmentStatus,
   updateService,
 } from './services/loyaltyService'
 
 const icons = { Corte: Scissors, Peinado: Crown, Cepillado: Wind, Coloración: Palette, Tratamiento: Sparkles }
 
 export default function App() {
-  const [services, setServices] = useState(() => readServices())
-  const [appointments, setAppointments] = useState(() => readAppointments())
+  const [services, setServices] = useState(() => (isLocalDemoEnabled ? readServices() : []))
+  const [appointments, setAppointments] = useState(() => (isLocalDemoEnabled ? readAppointments() : []))
   const [view, setView] = useState('list')
   const [searchTerm, setSearchTerm] = useState('')
   const [editingService, setEditingService] = useState(null)
   const [serviceDraft, setServiceDraft] = useState(null)
   const [pendingAppointmentId, setPendingAppointmentId] = useState(null)
-  const [customers, setCustomers] = useState(() => readJsonArray(window.localStorage, LOYALTY_STORAGE_KEYS.customers))
+  const [customers, setCustomers] = useState(() =>
+    isLocalDemoEnabled ? readJsonArray(window.localStorage, LOYALTY_STORAGE_KEYS.customers) : [],
+  )
   const [pointsLedger, setPointsLedger] = useState(() =>
-    readJsonArray(window.localStorage, LOYALTY_STORAGE_KEYS.points),
+    isLocalDemoEnabled ? readJsonArray(window.localStorage, LOYALTY_STORAGE_KEYS.points) : [],
   )
   const [selectedCustomer, setSelectedCustomer] = useState(null)
-  const [role, setRole] = useState('admin')
+  const [role, setRole] = useState(isLocalDemoEnabled ? 'admin' : null)
   const [walletCustomerId, setWalletCustomerId] = useState(null)
   const [settings, setSettings] = useState(() => readSettings())
   const [statsStartDate, setStatsStartDate] = useState(() => {
@@ -83,13 +93,23 @@ export default function App() {
   const [clientAuthError, setClientAuthError] = useState('')
   const [appointmentMessage, setAppointmentMessage] = useState('')
   const [appointmentLoading, setAppointmentLoading] = useState(false)
+  const [adjustmentLoading, setAdjustmentLoading] = useState(false)
+  const [adjustmentMessage, setAdjustmentMessage] = useState('')
   const enrollmentMode = new URLSearchParams(window.location.search).get('registro') === '1'
   const adminRoute = window.location.pathname === '/admin'
 
-  useEffect(() => writeStorageArray(window.localStorage, serviceStorageKey, services), [services])
-  useEffect(() => writeStorageArray(window.localStorage, appointmentStorageKey, appointments), [appointments])
-  useEffect(() => writeStorageArray(window.localStorage, LOYALTY_STORAGE_KEYS.customers, customers), [customers])
-  useEffect(() => writeStorageArray(window.localStorage, LOYALTY_STORAGE_KEYS.points, pointsLedger), [pointsLedger])
+  useEffect(() => {
+    if (isLocalDemoEnabled) writeStorageArray(window.localStorage, serviceStorageKey, services)
+  }, [services])
+  useEffect(() => {
+    if (isLocalDemoEnabled) writeStorageArray(window.localStorage, appointmentStorageKey, appointments)
+  }, [appointments])
+  useEffect(() => {
+    if (isLocalDemoEnabled) writeStorageArray(window.localStorage, LOYALTY_STORAGE_KEYS.customers, customers)
+  }, [customers])
+  useEffect(() => {
+    if (isLocalDemoEnabled) writeStorageArray(window.localStorage, LOYALTY_STORAGE_KEYS.points, pointsLedger)
+  }, [pointsLedger])
 
   useEffect(() => {
     if (!isSupabaseConfigured) return undefined
@@ -142,13 +162,7 @@ export default function App() {
       .then((customer) =>
         setCustomers([
           {
-            ...customer,
-            customer_id: customer.id,
-            membership_tier: getMembershipTier(customer.total_points),
-            barber_visits:
-              customer.points_transactions?.filter((transaction) =>
-                transaction.description?.toLowerCase().includes('corte'),
-              ).length || 0,
+            ...mapRemoteCustomer(customer, getMembershipTier),
           },
         ]),
       )
@@ -161,15 +175,7 @@ export default function App() {
     listCustomers()
       .then((remoteCustomers) =>
         setCustomers(
-          remoteCustomers.map((customer) => ({
-            ...customer,
-            customer_id: customer.id,
-            membership_tier: getMembershipTier(customer.total_points),
-            barber_visits:
-              customer.points_transactions?.filter((transaction) =>
-                transaction.description?.toLowerCase().includes('corte'),
-              ).length || 0,
-          })),
+          remoteCustomers.map((customer) => mapRemoteCustomer(customer, getMembershipTier)),
         ),
       )
       .catch((error) => setAuthError(error.message))
@@ -180,6 +186,30 @@ export default function App() {
     if (!profile?.role) return
     setRole(profile.role)
     setView(profile.role === 'client' ? 'wallet' : 'list')
+  }, [profile?.role])
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || profile?.role !== 'admin') return undefined
+    listServices()
+      .then((remoteServices) =>
+        setServices(
+          remoteServices.map(mapRemoteService),
+        ),
+      )
+      .catch((error) => setAuthError(error.message))
+    return undefined
+  }, [profile?.role])
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || profile?.role !== 'admin') return undefined
+    listAppointments()
+      .then((remoteAppointments) =>
+        setAppointments(
+          remoteAppointments.map(mapRemoteAppointment),
+        ),
+      )
+      .catch((error) => setAuthError(error.message))
+    return undefined
   }, [profile?.role])
 
   const cash = useMemo(() => calculateDailyCash(services), [services])
@@ -279,7 +309,7 @@ export default function App() {
       }
       setServices((current) => [savedValues, ...current])
       const customer = customers.find((item) => item.customer_id === values.customerId)
-      if (customer) {
+      if (customer && !isSupabaseConfigured) {
         const result = addPointsTransaction(customer, values, values.staff)
         setCustomers((current) =>
           current.map((item) => (item.customer_id === customer.customer_id ? result.customer : item)),
@@ -287,6 +317,14 @@ export default function App() {
         setPointsLedger((current) => [result.transaction, ...current])
       }
       if (pendingAppointmentId !== null) {
+        if (isSupabaseConfigured) {
+          try {
+            await updateAppointmentStatus(pendingAppointmentId, APPOINTMENT_STATUS.COMPLETED)
+          } catch (error) {
+            setAuthError(error.message)
+            return
+          }
+        }
         setAppointments((current) => current.filter((appointment) => appointment.id !== pendingAppointmentId))
         setPendingAppointmentId(null)
       }
@@ -295,6 +333,10 @@ export default function App() {
   }
 
   const removeService = (id) => {
+    if (isSupabaseConfigured) {
+      setAuthError('Los servicios productivos no se eliminan desde la interfaz. Registra un ajuste auditado.')
+      return
+    }
     if (window.confirm('¿Deseas eliminar este registro?'))
       setServices((current) => current.filter((service) => service.id !== id))
   }
@@ -304,11 +346,22 @@ export default function App() {
     return <Icon className="w-6 h-6" />
   }
 
-  const confirmAppointment = (appointment) => {
+  const confirmAppointment = async (appointment) => {
+    if (isSupabaseConfigured) {
+      try {
+        const updated = await updateAppointmentStatus(appointment.id, APPOINTMENT_STATUS.CONFIRMED)
+        setAppointments((current) =>
+          current.map((item) => (item.id === updated.id ? { ...item, ...updated, status: updated.status } : item)),
+        )
+      } catch (error) {
+        setAuthError(error.message)
+        return
+      }
+    }
     setServiceDraft({
-      client: appointment.client,
-      type: appointment.type,
-      date: appointment.date,
+      client: appointment.client || appointment.client_name,
+      type: appointment.type || appointment.service_type,
+      date: appointment.date || appointment.appointment_date,
       paymentMethod: 'Efectivo',
       staff: 'Jhon barber',
       price: '',
@@ -316,6 +369,21 @@ export default function App() {
     })
     setPendingAppointmentId(appointment.id)
     setView('add')
+  }
+
+  const rejectAppointment = async (appointmentId) => {
+    if (isSupabaseConfigured) {
+      try {
+        const updated = await updateAppointmentStatus(appointmentId, APPOINTMENT_STATUS.REJECTED)
+        setAppointments((current) =>
+          current.map((item) => (item.id === updated.id ? { ...item, ...updated, status: updated.status } : item)),
+        )
+      } catch (error) {
+        setAuthError(error.message)
+      }
+      return
+    }
+    setAppointments((current) => current.filter((appointment) => appointment.id !== appointmentId))
   }
 
   const createLoyaltyCustomer = async (formData) => {
@@ -341,24 +409,50 @@ export default function App() {
           total_points: remoteCustomer.total_points,
           membership_tier: getMembershipTier(remoteCustomer.total_points),
         }
+
       } catch (error) {
         setAuthError(error.message)
         return
       }
     }
     setCustomers((current) => [savedCustomer, ...current])
-    setPointsLedger((current) => [
-      {
-        transaction_id: `welcome_${savedCustomer.customer_id}`,
-        customer_id: savedCustomer.customer_id,
-        points_earned: 20,
-        service_type: 'Bono de bienvenida',
-        staff_name: 'Sistema',
-        date: savedCustomer.created_at,
-      },
-      ...current,
-    ])
+    if (!isSupabaseConfigured) {
+      setPointsLedger((current) => [
+        {
+          transaction_id: `welcome_${savedCustomer.customer_id}`,
+          customer_id: savedCustomer.customer_id,
+          points_earned: WELCOME_POINTS,
+          service_type: 'Bono de bienvenida',
+          staff_name: 'Sistema',
+          date: savedCustomer.created_at,
+        },
+        ...current,
+      ])
+    }
     setSelectedCustomer(savedCustomer)
+  }
+
+  const handleAdjustPoints = async ({ pointsDelta, reason }) => {
+    if (!selectedCustomer || !Number.isInteger(pointsDelta) || pointsDelta === 0) {
+      setAdjustmentMessage('El ajuste debe ser un número entero distinto de cero.')
+      return
+    }
+    setAdjustmentLoading(true)
+    setAdjustmentMessage('')
+    try {
+      await adjustCustomerPoints(selectedCustomer.customer_id, pointsDelta, reason)
+      const refreshedCustomer = await getCustomerById(selectedCustomer.customer_id)
+      const mappedCustomer = mapRemoteCustomer(refreshedCustomer, getMembershipTier)
+      setCustomers((current) =>
+        current.map((customer) => (customer.customer_id === mappedCustomer.customer_id ? mappedCustomer : customer)),
+      )
+      setSelectedCustomer(mappedCustomer)
+      setAdjustmentMessage('Ajuste registrado correctamente.')
+    } catch (error) {
+      setAdjustmentMessage(error.message)
+    } finally {
+      setAdjustmentLoading(false)
+    }
   }
 
   const handleRoleChange = (nextRole) => {
@@ -412,13 +506,34 @@ export default function App() {
     setAppointmentLoading(true)
     setAppointmentMessage('')
     try {
-      await createAppointment(details)
+      const validationError = validateAppointmentRequest(details.appointmentDate)
+      if (validationError) throw new Error(validationError)
+      const appointmentDate = new Date(details.appointmentDate)
+      await createAppointment({
+        ...details,
+        appointmentDate: appointmentDate.toISOString(),
+        durationMinutes: getServiceDurationMinutes(details.serviceType),
+      })
       setAppointmentMessage('Tu solicitud fue enviada. Te contactaremos para confirmar el horario.')
     } catch (error) {
       setAppointmentMessage(error.message)
     } finally {
       setAppointmentLoading(false)
     }
+  }
+
+  if (!isSupabaseConfigured && !isLocalDemoEnabled) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#121212] px-4 text-center text-[#f7f2ea]">
+        <div className="max-w-lg rounded-3xl bg-[#1d1d1d] p-8">
+          <h1 className="text-2xl font-black">Configuración pendiente</h1>
+          <p className="mt-3 text-sm text-[#a59e92]">
+            Define VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en el archivo .env y reinicia Vite. El modo local solo
+            está disponible si VITE_ENABLE_LOCAL_DEMO=true.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   if (isSupabaseConfigured && authLoading) {
@@ -453,13 +568,13 @@ export default function App() {
             configure.
           </p>
           {authError && <p className="mt-4 text-sm font-bold text-red-300">{authError}</p>}
-          <button
+          {isLocalDemoEnabled && <button
             type="button"
             onClick={() => handleRoleChange('logout')}
             className="mt-6 rounded-xl bg-[#c9a15c] px-4 py-3 text-xs font-black uppercase text-[#121212]"
           >
             Cerrar sesión
-          </button>
+          </button>}
         </div>
       </div>
     )
@@ -475,9 +590,11 @@ export default function App() {
             searchTerm={searchTerm}
             onSearch={setSearchTerm}
             onRemove={removeService}
+            allowRemove={isLocalDemoEnabled}
             onEdit={(service) => {
               setEditingService(service)
             }}
+            allowEdit={!isSupabaseConfigured}
             getIcon={getIcon}
           />
         </div>
@@ -489,6 +606,9 @@ export default function App() {
           onSelect={setSelectedCustomer}
           selectedCustomer={selectedCustomer}
           onCloseProfile={() => setSelectedCustomer(null)}
+          onAdjustPoints={isSupabaseConfigured ? handleAdjustPoints : undefined}
+          adjustmentLoading={adjustmentLoading}
+          adjustmentMessage={adjustmentMessage}
         />
       )}
       {role === 'admin' && view === 'settings' && (
@@ -618,7 +738,7 @@ export default function App() {
                     type: 'Coloración',
                     date: new Date().toISOString(),
                     source: 'WhatsApp Bot',
-                    status: 'Pendiente',
+                    status: APPOINTMENT_STATUS.PENDING,
                   },
                   ...current,
                 ])
@@ -631,7 +751,7 @@ export default function App() {
           <AppointmentList
             appointments={appointments}
             onConfirm={confirmAppointment}
-            onReject={(id) => setAppointments((current) => current.filter((appointment) => appointment.id !== id))}
+            onReject={rejectAppointment}
           />
         </div>
       )}

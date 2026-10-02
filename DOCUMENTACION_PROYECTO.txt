@@ -612,8 +612,10 @@ Reglas locales actuales:
 - Oro: desde 150 puntos.
 - Diamante: desde 300 puntos.
 
-El prototipo local todavía puede ejecutarse sin backend. La base para Supabase
-se encuentra en supabase/migrations y en los servicios de src/services. Las
+La aplicación requiere Supabase configurado para habilitar el acceso normal.
+El modo local de demostración solo se activa explícitamente con
+VITE_ENABLE_LOCAL_DEMO=true y nunca debe usarse en producción. La base para
+Supabase se encuentra en supabase/migrations y en los servicios de src/services. Las
 recompensas y canjes se modelan en el esquema centralizado mediante rewards,
 reward_redemptions y redeem_reward. La integración visual completa se
 conectará después de ejecutar la migración y configurar autenticación.
@@ -668,10 +670,10 @@ public/manifest.webmanifest. No es todavía una tarjeta nativa de Apple Wallet
 ni Google Wallet: esas integraciones necesitan un backend, certificados,
 credenciales de emisor y endpoints seguros.
 
-La selección de rol sigue siendo una demostración local cuando Supabase no está
-configurado. No debe considerarse autenticación. Con Supabase configurado, el
-acceso seguro debe usar Supabase Auth y la tabla profiles; nunca se deben
-guardar contraseñas en localStorage.
+Si Supabase no está configurado y VITE_ENABLE_LOCAL_DEMO no es true, la
+aplicación muestra una pantalla de configuración y no expone ningún panel.
+Con Supabase configurado, el acceso seguro debe usar Supabase Auth y la tabla
+profiles; nunca se deben guardar contraseñas en localStorage.
 
 
 19. BASE DE DATOS SUPABASE Y AUTENTICACION
@@ -680,6 +682,7 @@ guardar contraseñas en localStorage.
 Se añadió la migración:
 
 - supabase/migrations/20261001200000_hair_style_initial_schema.sql
+- supabase/migrations/20261002100000_harden_appointments.sql
 
 Incluye customers, staff, services, points_transactions, appointments,
 rewards, reward_redemptions y profiles. También incluye el trigger que calcula
@@ -704,7 +707,13 @@ Archivos de integración:
 
 La clave anon puede estar en el frontend; nunca se debe incluir una
 service_role key. La protección real depende de RLS en Supabase, no de ocultar
-botones en React.
+botones en React. La migración incremental de citas agrega estados válidos,
+validación de horario futuro, horario de atención y prevención de doble reserva.
+
+Para aplicar la mejora de citas en un proyecto que ya ejecutó la migración
+inicial, ejecutar también 20261002100000_harden_appointments.sql en el SQL
+Editor de Supabase. Las solicitudes deben ser de lunes a sábado entre 08:00 y
+20:00, hora de Colombia.
 
 
 20. FLUJO VISUAL AUTENTICADO

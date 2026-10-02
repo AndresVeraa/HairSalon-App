@@ -13,7 +13,7 @@ describe('loyalty calculations', () => {
     expect(customer).toMatchObject({
       name: 'Maria',
       phone: '300123',
-      total_points: 20,
+      total_points: 10,
       membership_tier: 'Plata',
       barber_visits: 0,
     })

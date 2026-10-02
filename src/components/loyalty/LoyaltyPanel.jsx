@@ -2,8 +2,18 @@ import { useState } from 'react'
 import CustomerForm from './CustomerForm'
 import CustomerList from './CustomerList'
 import CustomerCardIssuer from './CustomerCardIssuer'
+import PointAdjustmentForm from './PointAdjustmentForm'
 
-export default function LoyaltyPanel({ customers, onCreate, onSelect, selectedCustomer, onCloseProfile }) {
+export default function LoyaltyPanel({
+  customers,
+  onCreate,
+  onSelect,
+  selectedCustomer,
+  onCloseProfile,
+  onAdjustPoints,
+  adjustmentLoading,
+  adjustmentMessage,
+}) {
   const [showForm, setShowForm] = useState(false)
   return (
     <div className="space-y-6">
@@ -42,6 +52,14 @@ export default function LoyaltyPanel({ customers, onCreate, onSelect, selectedCu
           <p className="mt-2 font-bold">{selectedCustomer.membership_tier}</p>
           <p className="mt-4 text-xs break-all opacity-80">QR: {selectedCustomer.nfc_qr_token}</p>
           <CustomerCardIssuer customer={selectedCustomer} />
+          {onAdjustPoints && (
+            <PointAdjustmentForm
+              customer={selectedCustomer}
+              onSubmit={onAdjustPoints}
+              loading={adjustmentLoading}
+              message={adjustmentMessage}
+            />
+          )}
         </div>
       ) : (
         <CustomerList customers={customers} onSelect={onSelect} />

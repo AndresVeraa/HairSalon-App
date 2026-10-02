@@ -77,7 +77,14 @@ export async function listCustomerRedemptions(customerId) {
   return data
 }
 
-export async function createAppointment({ customerId, clientName, serviceType, appointmentDate }) {
+export async function createAppointment({
+  customerId,
+  clientName,
+  serviceType,
+  appointmentDate,
+  staffId = null,
+  durationMinutes = 60,
+}) {
   const client = requireSupabase()
   const { data, error } = await client
     .from('appointments')
@@ -86,11 +93,60 @@ export async function createAppointment({ customerId, clientName, serviceType, a
       client_name: clientName.trim(),
       service_type: serviceType,
       appointment_date: appointmentDate,
+      staff_id: staffId,
+      duration_minutes: durationMinutes,
       source: 'Web',
     })
     .select()
     .single()
 
+  if (error) throw error
+  return data
+}
+
+export async function listAppointments() {
+  const client = requireSupabase()
+  const { data, error } = await client.from('appointments').select('*').order('appointment_date', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function updateAppointmentStatus(appointmentId, status) {
+  const client = requireSupabase()
+  const { data, error } = await client
+    .from('appointments')
+    .update({ status })
+    .eq('id', appointmentId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function adjustCustomerPoints(customerId, pointsDelta, reason) {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('adjust_customer_points', {
+    p_customer_id: customerId,
+    p_points_delta: pointsDelta,
+    p_reason: reason,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function listAdminAuditLog() {
+  const client = requireSupabase()
+  const { data, error } = await client.from('admin_audit_log').select('*').order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function listServices() {
+  const client = requireSupabase()
+  const { data, error } = await client
+    .from('services')
+    .select('*, staff(name)')
+    .order('created_at', { ascending: false })
   if (error) throw error
   return data
 }

@@ -1,8 +1,14 @@
 import { useState } from 'react'
 
+const toLocalDateTimeInput = (date) => {
+  const offset = date.getTimezoneOffset() * 60000
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16)
+}
+
 export default function ClientAppointmentForm({ customer, onSubmit, loading, message }) {
   const [serviceType, setServiceType] = useState('Corte')
   const [appointmentDate, setAppointmentDate] = useState('')
+  const minimumDate = toLocalDateTimeInput(new Date(Date.now() + 60 * 60 * 1000))
 
   return (
     <form
@@ -34,6 +40,7 @@ export default function ClientAppointmentForm({ customer, onSubmit, loading, mes
         <input
           type="datetime-local"
           required
+          min={minimumDate}
           value={appointmentDate}
           onChange={(event) => setAppointmentDate(event.target.value)}
           className="mt-2 w-full rounded-2xl bg-[#f7f2ea] px-4 py-3 font-bold"

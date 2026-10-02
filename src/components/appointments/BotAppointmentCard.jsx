@@ -8,17 +8,17 @@ export default function BotAppointmentCard({ appointment, onConfirm, onReject })
           <User size={28} />
         </div>
         <div>
-          <h4 className="text-lg font-black text-slate-800">{appointment.client}</h4>
+          <h4 className="text-lg font-black text-slate-800">{appointment.client || appointment.client_name}</h4>
           <div className="flex flex-wrap items-center gap-3 mt-1">
             <span className="text-[9px] font-black uppercase text-green-600 bg-green-50 px-2 py-0.5 rounded">
               {appointment.source}
             </span>
             <span className="text-[9px] font-black uppercase text-rose-500 bg-rose-50 px-2 py-0.5 rounded">
-              {appointment.type}
+              {appointment.type || appointment.service_type}
             </span>
             <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
               <Clock size={12} />
-              {new Date(appointment.date).toLocaleDateString()}
+              {new Date(appointment.date || appointment.appointment_date).toLocaleString()}
             </span>
           </div>
         </div>

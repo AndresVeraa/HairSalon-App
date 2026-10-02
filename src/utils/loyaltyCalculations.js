@@ -19,6 +19,7 @@ export const POINT_RULES = {
 export const BARBER_SERVICE_TYPES = ['Corte', 'Corte + barba']
 export const BARBER_DISCOUNT_VISIT = 4
 export const BARBER_DISCOUNT_PERCENTAGE = 0.05
+export const WELCOME_POINTS = 10
 
 export const getPointsForService = (serviceType) => POINT_RULES[serviceType] || POINT_RULES.Otro
 
@@ -55,7 +56,7 @@ export const createCustomer = ({ name, phone, email }) => {
     phone: phone.trim(),
     email: email.trim(),
     nfc_qr_token: `qr_${crypto.randomUUID?.() || id}`,
-    total_points: 20,
+    total_points: WELCOME_POINTS,
     membership_tier: 'Plata',
     barber_visits: 0,
     created_at: new Date().toISOString(),
