@@ -1,17 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg-dark: #121212;
+  --bg-dark-deep: #0b0b0b;
+  --bg-light: #f0e7da;
+  --bg-light-soft: #f7f2ea;
+  --gold-primary: #c9a15c;
+  --gold-light: #e4c88a;
+  --gold-foil: linear-gradient(135deg, #e4c88a 0%, #c9a15c 50%, #9b7637 100%);
+  --wood-accent: #8b5e3c;
+  --silver-accent: #b8b8b0;
+  --text-primary-on-dark: #f7f2ea;
+  --text-muted-on-dark: #a59e92;
+  --text-primary-on-light: #121212;
+  --text-muted-on-light: #5a534a;
+  --border-gold-subtle: rgba(201, 161, 92, 0.25);
+  --border-gold-hover: rgba(228, 200, 138, 0.6);
+}
+
 html {
-  background-color: #fdf2f8; /* Fondo rosado suave característico de HairSalon */
+  background-color: var(--bg-light);
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #fdf2f8;
+  background-color: var(--bg-light);
+  color: var(--text-primary-on-light);
+  font-family: 'Montserrat', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, .font-black {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+button, input, select, textarea {
+  font-family: 'Montserrat', sans-serif;
+}
+
+button.font-black, input.font-black, select.font-black, textarea.font-black {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.bg-pink-50 {
+  background-color: var(--bg-light) !important;
+}
+
+.bg-white {
+  background-color: var(--bg-light-soft) !important;
+}
+
+.bg-white\/70 {
+  background-color: rgba(247, 242, 234, 0.78) !important;
+}
+
+.bg-white\/80 {
+  background-color: rgba(247, 242, 234, 0.9) !important;
+}
+
+.bg-rose-500, .bg-rose-400 {
+  background-color: var(--gold-primary) !important;
+}
+
+.bg-rose-50 {
+  background-color: rgba(201, 161, 92, 0.12) !important;
+}
+
+.text-rose-500, .text-rose-600 {
+  color: var(--gold-primary) !important;
+}
+
+.text-rose-100, .text-rose-200 {
+  color: var(--gold-light) !important;
+}
+
+.border-rose-50, .border-rose-100, .border-rose-200 {
+  border-color: var(--border-gold-subtle) !important;
+}
+
+.shadow-rose-100, .shadow-rose-200 {
+  --tw-shadow-color: rgba(201, 161, 92, 0.2) !important;
+}
+
+.hover\:bg-rose-600:hover {
+  background-color: #9b7637 !important;
+}
+
+.hover\:text-rose-500:hover {
+  color: var(--gold-light) !important;
+}
+
+.font-sans {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.brand-shell {
+  background:
+    radial-gradient(circle at 50% -20%, rgba(201, 161, 92, 0.16), transparent 34rem),
+    var(--bg-light);
+}
+
+.brand-shell .text-slate-900,
+.brand-shell .text-slate-800 {
+  color: var(--text-primary-on-light);
+}
+
+.brand-shell .text-slate-400,
+.brand-shell .text-slate-500 {
+  color: var(--text-muted-on-light);
+}
+
+.gold-outline {
+  border: 1px solid var(--border-gold-subtle);
 }
 
 /* Estilo para inputs de número */

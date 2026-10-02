@@ -1,0 +1,909 @@
+DOCUMENTACION DEL PROYECTO - HAIRSALON APP
+============================================
+
+Fecha de esta documentación: 2026-10-01
+Versión visible en la interfaz: HairSalon Pro v7.7
+
+Este archivo resume lo que existe actualmente en el proyecto, cómo está
+organizado, cómo funciona, qué requisitos tiene y cómo probarlo.
+
+
+1. RESUMEN DEL PROYECTO
+-----------------------
+
+HairSalon App es una aplicación web de una sola página (SPA) para llevar el
+control básico de un salón de belleza/barbería. Permite registrar servicios
+realizados, consultar el dinero producido, calcular la liquidación diaria del
+personal, revisar estadísticas mensuales y visualizar citas simuladas
+provenientes de un chatbot de WhatsApp.
+
+La aplicación está construida con React y Vite. Actualmente es un prototipo
+funcional del lado del cliente:
+
+- No tiene servidor propio.
+- No tiene API.
+- No tiene base de datos externa.
+- No tiene usuarios, autenticación ni permisos.
+- Los datos se guardan únicamente en el localStorage del navegador.
+- Los datos dependen del navegador y del dispositivo donde se ejecuta.
+
+
+2. TECNOLOGÍAS Y REQUISITOS
+---------------------------
+
+Tecnologías principales:
+
+- JavaScript moderno (ES Modules).
+- React 18.2.
+- React DOM 18.2.
+- Vite 7.3 como herramienta de desarrollo y compilación.
+- Tailwind CSS 3.4 para estilos.
+- PostCSS y Autoprefixer.
+- lucide-react para los iconos.
+- ESLint para reglas básicas de código.
+
+Requisitos para trabajar localmente:
+
+- Node.js instalado. Se recomienda una versión LTS vigente.
+- npm incluido con Node.js.
+- Un navegador moderno (Chrome, Edge, Firefox o similar).
+- Acceso a internet durante la primera instalación y para cargar la fuente
+  Plus Jakarta Sans desde Google Fonts, salvo que se cambie esa configuración.
+
+No se requiere:
+
+- MySQL, PostgreSQL u otra base de datos.
+- Firebase.
+- Docker.
+- Variables de entorno.
+- Un backend.
+
+
+3. ESTRUCTURA DEL PROYECTO
+---------------------------
+
+Archivos y carpetas principales:
+
+- index.html
+  Punto de entrada HTML. Define el idioma español, el título de la página,
+  el favicon actual de Vite y carga la fuente Plus Jakarta Sans.
+
+- src/main.jsx
+  Monta el componente principal App dentro del elemento HTML con id "root".
+  También importa los estilos globales.
+
+- src/App.jsx
+  Contiene prácticamente toda la lógica y la interfaz de la aplicación:
+  estado, persistencia, cálculos, navegación entre vistas, formularios y
+  renderizado de los servicios y citas.
+
+- src/index.css
+  Importa las capas de Tailwind, define el fondo global rosado, ajustes del
+  body, controles numéricos y el estilo visual de los select.
+
+- src/App.css
+  Conserva estilos iniciales de la plantilla de Vite. La interfaz actual
+  utiliza principalmente clases de Tailwind.
+
+- vite.config.js
+  Configura Vite con el plugin de React.
+
+- tailwind.config.js
+  Indica qué archivos debe revisar Tailwind y configura Plus Jakarta Sans como
+  fuente sans-serif.
+
+- postcss.config.js
+  Activa Tailwind CSS y Autoprefixer.
+
+- eslint.config.js
+  Configura ESLint para JavaScript, React Hooks y React Refresh.
+
+- package.json
+  Contiene dependencias y comandos npm.
+
+- package-lock.json
+  Fija las versiones concretas de las dependencias instaladas por npm.
+
+- public/
+  Contiene actualmente el favicon vite.svg.
+
+
+4. FUNCIONES IMPLEMENTADAS
+--------------------------
+
+4.1. Navegación principal
+
+La interfaz tiene cuatro vistas seleccionables desde la barra superior:
+
+1) Liquidación
+   Vista principal con caja del día, desglose de pagos, liquidación del
+   personal, buscador y listado de servicios.
+
+2) Citas Bot
+   Lista de citas almacenadas y botón para crear una cita simulada como si
+   llegara desde WhatsApp.
+
+3) Estadísticas
+   Muestra el total del mes actual y una gráfica de ventas por día.
+
+4) Registro
+   Formulario para crear un nuevo servicio.
+
+El estado de la vista se controla con el valor interno "view":
+
+- "list"
+- "appointments"
+- "stats"
+- "add"
+
+
+4.2. Registro de servicios
+
+Desde "Registro" se puede guardar un servicio con estos datos:
+
+- Nombre del cliente (obligatorio).
+- Persona que atendió:
+  - Jhon barber
+  - Nelly peluquera
+  - Luz peluquera
+- Tipo de servicio:
+  - Corte
+  - Peinado
+  - Cepillado
+  - Coloración
+  - Tratamiento
+  - Otro
+- Método de pago:
+  - Efectivo
+  - Nequi
+- Precio cobrado (obligatorio).
+- Campo interno de notas preparado en la lógica, aunque actualmente no existe
+  un control visible para diligenciarlo.
+
+Al guardar:
+
+- Se genera un id basado en Date.now().
+- Se guarda la fecha y hora actuales en formato ISO.
+- El precio se convierte a número y se redondea con Math.round.
+- El servicio aparece al principio del listado.
+- La aplicación regresa automáticamente a la vista Liquidación.
+
+
+4.3. Listado, búsqueda y eliminación
+
+En Liquidación:
+
+- Los servicios se muestran con cliente, tipo, persona responsable, método de
+  pago, precio e icono según el tipo de servicio.
+- El buscador filtra por nombre de cliente sin distinguir mayúsculas y
+  minúsculas.
+- Cada registro tiene un botón para eliminarlo.
+- Antes de eliminar se solicita confirmación mediante window.confirm.
+
+No existe actualmente una opción de editar un servicio ya guardado.
+
+
+4.4. Caja diaria
+
+La tarjeta principal calcula la "Caja Bruta Hoy":
+
+- Toma los servicios cuya fecha coincide con el día actual.
+- Suma los precios redondeados.
+- Separa el total del día entre Nequi y Efectivo.
+
+También se muestra el total liquidado que corresponde a Luz.
+
+
+4.5. Liquidación del personal
+
+La liquidación se calcula únicamente con los servicios del día actual.
+
+Reglas actuales:
+
+- Jhon barber:
+  - Produce el 100% del valor de sus servicios.
+  - Recibe el 60%.
+  - Luz recibe el 40% restante.
+
+- Nelly peluquera:
+  - Produce el 100% del valor de sus servicios.
+  - Recibe el 50%.
+  - Luz recibe el 50% restante.
+
+- Luz peluquera:
+  - Recibe el 100% de sus propios servicios.
+  - Además recibe las participaciones de Jhon y Nelly que corresponden a la
+    dueña.
+
+Cada tarjeta muestra:
+
+- Producción bruta de la persona.
+- Total liquidado.
+- Cantidad de servicios realizados hoy.
+- Nota con el porcentaje o la condición de dueña.
+
+Los cálculos usan Math.round, por lo que los valores decimales se redondean.
+
+
+4.6. Estadísticas y reportes históricos
+
+La vista Estadísticas permite seleccionar un rango inclusivo con los campos
+Desde y Hasta. El reporte:
+
+- Filtra los servicios por fecha local.
+- Calcula el ingreso total del periodo.
+- Muestra la cantidad de servicios incluidos.
+- Agrupa los ingresos por día en una gráfica.
+- Permite descargar un CSV separado por punto y coma, compatible con hojas de
+  cálculo en español.
+- Permite descargar un archivo XLS compatible con Microsoft Excel.
+- Abre una vista imprimible para usar la opción del navegador "Guardar como
+  PDF".
+
+Si la fecha inicial es posterior a la fecha final, se muestra un aviso y el
+reporte se considera vacío.
+
+
+4.7. Citas Bot
+
+La vista Citas Bot tiene estas funciones:
+
+- Muestra las citas pendientes guardadas.
+- Permite crear una cita de prueba con el botón "Simular Cita WhatsApp".
+- La cita simulada usa:
+  - Cliente: Cliente Simulada
+  - Tipo: Coloración
+  - Fuente: WhatsApp Bot
+  - Estado: Pendiente
+  - Fecha: fecha y hora actuales
+- El botón con check lleva a la vista Nuevo Registro.
+- El botón con X elimina la cita de la lista.
+
+La aceptación abre el formulario de registro prellenado con los datos de la
+cita. La cita se elimina únicamente después de guardar el servicio. La
+integración con WhatsApp real todavía no existe; la función es una simulación
+local.
+
+
+5. PERSISTENCIA DE DATOS
+------------------------
+
+Se utilizan estas claves de localStorage:
+
+- hairsalon_v7_records
+  Guarda el arreglo de servicios.
+
+- hairsalon_v7_appointments
+  Guarda el arreglo de citas.
+
+La aplicación lee estas claves al iniciar y las actualiza cada vez que cambia
+el estado correspondiente.
+
+Consecuencias:
+
+- Si se borra el almacenamiento del navegador, se pierden los registros.
+- Otro navegador no verá los mismos datos.
+- Otro equipo no verá los mismos datos.
+- No hay copias de seguridad automáticas.
+- No existe sincronización entre usuarios o dispositivos.
+- Los datos están en el navegador, no en un servidor.
+
+Para reiniciar los datos desde el navegador se puede abrir DevTools y ejecutar:
+
+localStorage.removeItem('hairsalon_v7_records');
+localStorage.removeItem('hairsalon_v7_appointments');
+
+Después hay que recargar la página.
+
+
+6. INSTALACION Y EJECUCION
+--------------------------
+
+Desde la carpeta raíz del proyecto:
+
+1) Instalar dependencias:
+
+   npm install
+
+2) Iniciar el servidor de desarrollo:
+
+   npm run dev
+
+3) Abrir en el navegador la URL que muestre Vite, normalmente:
+
+   http://localhost:5173/
+
+Para crear una versión de producción:
+
+   npm run build
+
+El resultado se genera en la carpeta dist/.
+
+Para revisar localmente la compilación de producción:
+
+   npm run preview
+
+El comando de preview mostrará otra URL local para abrirla en el navegador.
+
+Comandos disponibles actualmente en package.json:
+
+- npm run dev
+- npm run build
+- npm run preview
+
+También están disponibles:
+
+- npm run test
+- npm run lint
+- npm run format
+
+
+7. COMO PROBAR MANUALMENTE LA APLICACION
+----------------------------------------
+
+Prueba básica de arranque:
+
+1) Ejecutar npm install.
+2) Ejecutar npm run dev.
+3) Abrir la URL local.
+4) Confirmar que aparece HairSalon y la navegación superior.
+
+Prueba de registro:
+
+1) Entrar a "Registro".
+2) Escribir un nombre de cliente.
+3) Seleccionar una persona.
+4) Seleccionar un servicio.
+5) Seleccionar Efectivo o Nequi.
+6) Escribir un precio.
+7) Pulsar "Guardar Registro".
+8) Confirmar que el registro aparece en Liquidación.
+
+Prueba de caja y pagos:
+
+1) Crear un servicio con Efectivo.
+2) Crear otro con Nequi.
+3) Revisar que "Caja Bruta Hoy" sea la suma de ambos.
+4) Revisar que Nequi y Efectivo estén separados correctamente.
+
+Prueba de liquidación:
+
+1) Crear un servicio para Jhon.
+2) Verificar que su liquidación sea el 60% de su producción.
+3) Crear un servicio para Nelly.
+4) Verificar que su liquidación sea el 50%.
+5) Crear un servicio para Luz.
+6) Verificar que Luz reciba sus servicios completos más las participaciones
+   restantes de Jhon y Nelly.
+7) Revisar que el contador de servicios de cada tarjeta aumente.
+
+Prueba de búsqueda y eliminación:
+
+1) Crear varios registros con nombres diferentes.
+2) Escribir parte del nombre en "Buscar cliente...".
+3) Confirmar que solo aparecen las coincidencias.
+4) Pulsar el icono de papelera.
+5) Confirmar la eliminación en el diálogo del navegador.
+
+Prueba de estadísticas:
+
+1) Crear al menos un servicio.
+2) Entrar a "Estadísticas".
+3) Seleccionar un rango que incluya el servicio.
+4) Confirmar que el total del periodo lo incluya.
+5) Confirmar que el día correspondiente tenga una barra de ventas.
+6) Pulsar CSV y comprobar que se descarga un archivo con los registros.
+7) Pulsar Excel y comprobar que se descarga un archivo .xls.
+8) Pulsar PDF / Imprimir y elegir "Guardar como PDF" en el diálogo del
+   navegador.
+
+Prueba de citas:
+
+1) Entrar a "Citas Bot".
+2) Pulsar "Simular Cita WhatsApp".
+3) Confirmar que aparece "Cliente Simulada".
+4) Pulsar X y confirmar que desaparece.
+5) Volver a simular una cita y pulsar el botón con check.
+6) Confirmar que se abre Registro con cliente, servicio y fecha prellenados.
+
+Prueba de persistencia:
+
+1) Crear un registro.
+2) Recargar la página.
+3) Confirmar que el registro continúa visible.
+4) Cerrar y abrir nuevamente la pestaña en el mismo navegador.
+5) Confirmar que los datos continúan disponibles.
+
+Prueba de compilación:
+
+1) Ejecutar npm run build.
+2) Confirmar que Vite termina sin errores y crea dist/.
+
+
+8. ESTADO ACTUAL Y LIMITACIONES CONOCIDAS
+-----------------------------------------
+
+Implementado:
+
+- Interfaz visual responsive.
+- Registro de servicios.
+- Lista de servicios.
+- Búsqueda por cliente.
+- Eliminación con confirmación.
+- Cálculo de caja del día.
+- Desglose por Efectivo y Nequi.
+- Liquidación configurable en el código para Jhon, Nelly y Luz.
+- Conteo diario de servicios por persona.
+- Estadísticas por rango de fechas y agrupación diaria.
+- Exportación CSV, Excel compatible y PDF mediante impresión del navegador.
+- Simulación de citas de WhatsApp.
+- Flujo cita a servicio con datos prellenados.
+- Edición de servicios y campo visible de notas.
+- Roles locales de administrador y cliente.
+- Wallet web/PWA local, clientes y puntos de fidelización.
+- Configuración dinámica de personal, porcentajes y tipos de servicio.
+- Persistencia local en el navegador.
+
+Pendiente o no implementado:
+
+- Backend y base de datos centralizada.
+- Inicio de sesión y roles seguros con autenticación real.
+- Integración real con WhatsApp.
+- Agenda con fecha y hora seleccionables.
+- Integración nativa con Apple Wallet o Google Wallet.
+- Gestión real del estado de una cita.
+- Validaciones avanzadas de precio, fechas y datos duplicados.
+- Favicon y branding finales: actualmente se conserva vite.svg.
+- Manejo de errores para datos corruptos en localStorage.
+
+Detalle importante para futuras mejoras:
+
+La lógica, el estado y gran parte de la interfaz viven en un solo archivo
+src/App.jsx. Si el proyecto crece, convendría separar componentes, cálculos,
+tipos de datos, almacenamiento y servicios de integración.
+
+
+9. REGLAS DE DATOS ACTUALES
+---------------------------
+
+Ejemplo conceptual de un servicio guardado:
+
+{
+  id: 1710000000000,
+  client: "Nombre del cliente",
+  type: "Corte",
+  price: 25000,
+  paymentMethod: "Efectivo",
+  staff: "Jhon barber",
+  date: "2026-10-01T15:00:00.000Z",
+  notes: null
+}
+
+Ejemplo conceptual de una cita simulada:
+
+{
+  id: 1710000000000,
+  client: "Cliente Simulada",
+  type: "Coloración",
+  date: "2026-10-01T15:00:00.000Z",
+  source: "WhatsApp Bot",
+  status: "Pendiente"
+}
+
+Las fechas se guardan en ISO y se muestran usando la configuración local del
+navegador.
+
+
+10. PUNTO RECOMENDADO PARA RETOMAR EL DESARROLLO
+------------------------------------------------
+
+Una ruta práctica para continuar el proyecto sería:
+
+1) Ejecutar la aplicación y repetir las pruebas manuales de este documento.
+2) Agregar un script npm lint y corregir los avisos encontrados.
+3) Separar App.jsx en componentes y funciones de dominio.
+4) Agregar pruebas para los cálculos de liquidación y estadísticas.
+5) Decidir si el almacenamiento seguirá siendo local o pasará a un backend.
+6) Si se requiere uso real del negocio, implementar autenticación, base de
+   datos, copias de seguridad e integración segura con WhatsApp.
+7) Implementar edición de servicios, reportes y configuración de porcentajes.
+
+Este documento describe el estado observado del código actual; cualquier
+funcionalidad futura debe actualizarse aquí para conservar una base de trabajo
+confiable.
+
+
+11. FASE 1 DE REFACTORIZACION (IMPLEMENTADA)
+---------------------------------------------
+
+La primera fase de modularización fue incorporada sin depender todavía de un
+esquema de base de datos:
+
+- App.jsx ahora coordina el estado y compone módulos especializados.
+- Componentes de layout:
+  - src/components/layout/Header.jsx
+  - src/components/layout/Navbar.jsx
+- Componentes de liquidación:
+  - src/components/settlement/DailyCashCard.jsx
+  - src/components/settlement/StaffSettlementCard.jsx
+  - src/components/settlement/SettlementSummary.jsx
+- Componentes de servicios:
+  - src/components/services/ServiceForm.jsx
+  - src/components/services/ServiceList.jsx
+  - src/components/services/ServiceItem.jsx
+  - src/components/services/EditServiceModal.jsx
+- Componentes de citas:
+  - src/components/appointments/BotAppointmentCard.jsx
+  - src/components/appointments/AppointmentList.jsx
+- Componentes de estadísticas:
+  - src/components/stats/MonthlyBarChart.jsx
+  - src/components/stats/DateFilter.jsx
+- Utilidades:
+  - src/utils/settlementCalculations.js
+  - src/utils/statsCalculations.js
+  - src/utils/storageHelper.js
+
+storageHelper.js valida que los valores almacenados sean arreglos y filtra
+elementos con una estructura mínima válida. Si el JSON está corrupto o el
+almacenamiento falla, registra el error en consola y evita que la aplicación
+se caiga.
+
+También se añadieron:
+
+- npm run lint para ESLint.
+- npm test para ejecutar Vitest.
+- npm run format para aplicar Prettier.
+- .prettierrc con el formato compartido del proyecto.
+- Pruebas unitarias de caja diaria, separación Efectivo/Nequi y comisiones.
+
+En esta fase también se dejó disponible la edición de servicios desde el
+formulario reutilizado. La integración con backend, autenticación y esquema
+relacional queda deliberadamente para las fases posteriores.
+
+
+12. FASE 2: SERVICIOS Y CITAS (IMPLEMENTADA)
+---------------------------------------------
+
+Se completó el flujo de gestión de servicios y citas:
+
+- La edición de un servicio se abre en un diálogo modal accesible.
+- El formulario de edición conserva id y fecha originales.
+- El formulario de registro permite modificar fecha y hora.
+- Las notas se pueden crear, editar y visualizar en el listado.
+- Los datos iniciales de un servicio se reutilizan en el formulario.
+- Al confirmar una cita se abre Registro con cliente, tipo, fecha y hora
+  prellenados.
+- La cita confirmada solo se elimina después de guardar el servicio.
+- Si se cancela el formulario, la cita permanece disponible.
+- La fecha elegida se guarda en formato ISO para conservar compatibilidad con
+  los cálculos diarios y mensuales.
+
+La conversión todavía requiere que el usuario complete el precio, la persona
+que atendió y el método de pago, porque esos datos no forman parte del modelo
+actual de una cita simulada.
+
+
+13. PROTOTIPO LOCAL DE FIDELIZACION
+-----------------------------------
+
+Se agregó el primer bloque de fidelización sin asumir todavía el esquema de
+base de datos definitivo:
+
+- Vista de Fidelización dentro de la navegación.
+- Registro de nombre, teléfono y correo del cliente.
+- Generación de customer_id y token QR local.
+- Bono inicial de 20 puntos.
+- Niveles Plata, Oro y Diamante.
+- Perfil con saldo y token de tarjeta digital.
+- Persistencia local en:
+  - hairsalon_v7_customers
+  - hairsalon_v7_points
+- Lector QR basado en html5-qrcode para posteriores escaneos.
+- Asociación opcional de un cliente al guardar un servicio.
+- Registro automático en el historial de puntos.
+
+Reglas locales actuales:
+
+- Corte, Peinado y Cepillado: 15 puntos.
+- Coloración, Rayitos y Tratamiento: 40 puntos.
+- Keratina y Alisado: 85 puntos.
+- Otros servicios: 10 puntos.
+- Plata: menos de 150 puntos.
+- Oro: desde 150 puntos.
+- Diamante: desde 300 puntos.
+
+La aplicación requiere Supabase configurado para habilitar el acceso normal.
+El modo local de demostración solo se activa explícitamente con
+VITE_ENABLE_LOCAL_DEMO=true y nunca debe usarse en producción. La base para
+Supabase se encuentra en supabase/migrations y en los servicios de src/services. Las
+recompensas y canjes se modelan en el esquema centralizado mediante rewards,
+reward_redemptions y redeem_reward. La integración visual completa se
+conectará después de ejecutar la migración y configurar autenticación.
+
+
+14. IDENTIDAD VISUAL HAIR STYLE
+--------------------------------
+
+La interfaz fue alineada con la identidad "Hair Style — Salón & Barbería":
+
+- Eslogan: "Tu mejor versión, con confianza."
+- Posicionamiento visual: lujo cálido, editorial y unisex.
+- Paleta principal:
+  - Carbón #121212 y negro profundo #0b0b0b.
+  - Beige lino #F0E7DA y crema #F7F2EA.
+  - Oro champagne #C9A15C y oro claro #E4C88A.
+  - Madera tostada #8B5E3C como acento disponible.
+- Tipografía:
+  - Playfair Display para titulares y marca.
+  - Montserrat para navegación, formularios, etiquetas y lectura.
+- Cabecera con monograma visual HS, nombre Hair Style y descriptor
+  "Salón & Barbería".
+- Navegación y footer en modo oscuro con bordes dorados sutiles.
+- Tarjetas y fondos con superficies crema, espacio negativo y contrastes
+  dorados en lugar del estilo rosado inicial.
+- Título del documento web actualizado a "Hair Style — Salón & Barbería".
+
+El monograma actual es una representación CSS/HTML provisional. El isotipo
+definitivo con las iniciales entrelazadas y el barber pole debe sustituirse por
+un recurso SVG o imagen de marca cuando exista el archivo oficial.
+
+
+15. ROLES LOCALES Y WALLET DEL CLIENTE
+--------------------------------------
+
+Se agregó una separación de uso local entre dos perfiles:
+
+- Administrador:
+  - Accede a liquidación, citas, estadísticas, registros y fidelización.
+  - Puede crear clientes y asociarlos a servicios.
+- Cliente:
+  - Accede a su vista "Mi Wallet".
+  - Consulta su tarjeta digital, nivel y puntos.
+  - Puede seleccionar un cliente de demostración cuando existen varios
+    perfiles locales.
+  - Puede descargar una representación JSON de su tarjeta mediante "Guardar
+    tarjeta en mi Wallet".
+
+La Wallet actual es una tarjeta web/PWA local. La información se conserva en
+localStorage y la PWA puede instalarse desde un navegador compatible gracias a
+public/manifest.webmanifest. No es todavía una tarjeta nativa de Apple Wallet
+ni Google Wallet: esas integraciones necesitan un backend, certificados,
+credenciales de emisor y endpoints seguros.
+
+Si Supabase no está configurado y VITE_ENABLE_LOCAL_DEMO no es true, la
+aplicación muestra una pantalla de configuración y no expone ningún panel.
+Con Supabase configurado, el acceso seguro debe usar Supabase Auth y la tabla
+profiles; nunca se deben guardar contraseñas en localStorage.
+
+
+19. BASE DE DATOS SUPABASE Y AUTENTICACION
+-------------------------------------------
+
+Se añadió la migración:
+
+- supabase/migrations/20261001200000_hair_style_initial_schema.sql
+- supabase/migrations/20261002100000_harden_appointments.sql
+
+Incluye customers, staff, services, points_transactions, appointments,
+rewards, reward_redemptions y profiles. También incluye el trigger que calcula
+los puntos al insertar un servicio, el procedimiento seguro para canjear
+recompensas, Realtime para clientes y transacciones, y políticas RLS.
+
+Para activar la conexión:
+
+1) Copiar .env.example como .env.
+2) Completar VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.
+3) Ejecutar la migración completa en el SQL Editor de Supabase.
+4) Crear usuarios en Supabase Auth y asociar cada usuario con una fila en
+   profiles. El rol admin es el único autorizado para administrar servicios,
+   personal, clientes, citas y recompensas.
+5) Reiniciar npm run dev después de cambiar el archivo .env.
+
+Archivos de integración:
+
+- src/lib/supabaseClient.js: cliente opcional y detección de configuración.
+- src/services/authService.js: sesión, inicio/cierre y perfil.
+- src/services/loyaltyService.js: registro, consulta, citas y Realtime.
+
+La clave anon puede estar en el frontend; nunca se debe incluir una
+service_role key. La protección real depende de RLS en Supabase, no de ocultar
+botones en React. La migración incremental de citas agrega estados válidos,
+validación de horario futuro, horario de atención y prevención de doble reserva.
+
+Para aplicar la mejora de citas en un proyecto que ya ejecutó la migración
+inicial, ejecutar también 20261002100000_harden_appointments.sql en el SQL
+Editor de Supabase. Las solicitudes deben ser de lunes a sábado entre 08:00 y
+20:00, hora de Colombia.
+
+
+20. FLUJO VISUAL AUTENTICADO
+-----------------------------
+
+Cuando las variables VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY están
+configuradas, la aplicación muestra primero el inicio de sesión de Supabase.
+No se permite entrar al panel por selección visual de rol.
+
+- Un perfil admin entra al panel completo.
+- Un perfil client solo entra a Wallet, puntos, visitas, recompensas, historial
+  de canjes y solicitud de citas.
+- Un usuario autenticado sin fila en profiles queda bloqueado con un mensaje de
+  configuración pendiente.
+- El botón de cerrar sesión invalida la sesión de Supabase.
+- Las recompensas se consultan desde rewards y el canje usa la función SQL
+  redeem_reward.
+- Las citas del cliente se insertan en appointments con su customer_id.
+
+El selector local de roles solo se conserva cuando Supabase no está configurado,
+para permitir pruebas offline del prototipo anterior.
+
+
+21. ACCESO DE CLIENTE POR QR/NFC Y CORREO
+---------------------------------------
+
+El acceso del cliente usa el token de la tarjeta como identificador, pero no
+como contraseña. El flujo es:
+
+1) El cliente escanea el QR de su tarjeta, acerca la tarjeta NFC o escribe el
+   token manualmente.
+2) Ingresa el correo asociado.
+3) Supabase Auth envía un magic link por correo y crea la identidad
+   autenticada si es el primer acceso.
+4) El cliente abre el enlace recibido y regresa a la aplicación.
+5) La función segura claim_customer_account valida el correo, crea o
+   recupera customers y vincula profiles.customer_id.
+6) El cliente entra únicamente a su Wallet, visitas, recompensas, historial y
+   agenda.
+
+El lector NFC usa Web NFC cuando el navegador lo soporta. En navegadores sin
+Web NFC se debe usar el QR o el token manual. La migración adicional
+supabase/migrations/20261002090500_customer_email_magic_link.sql debe ejecutarse
+en el SQL Editor después de la migración inicial. Esta migración permite que
+phone sea opcional para clientes que usan correo y reemplaza la validación por
+teléfono con validación por correo.
+
+Para activar el acceso por correo configura el proveedor Email de Supabase
+Authentication y agrega la URL de desarrollo y producción en Authentication
+Settings > URL Configuration. El token QR/NFC no se considera secreto
+suficiente para autenticar por sí solo.
+
+
+22. EMISION DE QR Y NFC
+------------------------
+
+Cada cliente recibe un token único al crear su tarjeta. Desde Administrador >
+Fidelización > seleccionar cliente se puede:
+
+- Visualizar el código QR generado.
+- Descargar el QR como imagen PNG para imprimirlo o enviarlo.
+- Copiar el token para una prueba manual.
+- Escribir el token en una etiqueta NFC desde un navegador compatible con Web
+  NFC.
+
+El QR contiene únicamente el token de la tarjeta, no la contraseña ni datos
+privados del cliente. Para emitir una tarjeta:
+
+1) Crear el cliente en Fidelización.
+2) Abrir su perfil.
+3) Descargar el QR e imprimirlo o compartirlo.
+4) Opcionalmente usar una etiqueta NFC NTAG213/215 y pulsar Escribir NFC desde
+   un teléfono Android compatible.
+5) El cliente escanea el QR o acerca la etiqueta NFC en la pantalla de acceso.
+
+Web NFC no está disponible en todos los navegadores, especialmente iPhone.
+Cuando no esté disponible se debe usar el QR. La etiqueta NFC debe escribirse
+con el token como texto plano; no se debe almacenar una contraseña en ella.
+
+
+23. REGISTRO AUTONOMO DEL CLIENTE
+----------------------------------
+
+El administrador no necesita crear cada cliente. En la pantalla de acceso se
+genera un QR público de inscripción con la URL:
+
+  /?registro=1
+
+Ese QR puede descargarse, imprimirse o escribirse como URL en una etiqueta
+NFC. Al escanearlo:
+
+1) Se abre directamente la pantalla de creación de Wallet.
+2) El cliente escribe su nombre y correo.
+3) El sistema genera un token personal único en el navegador.
+4) Supabase envía el magic link al correo.
+5) Al abrirlo, la función claim_customer_account crea customers y profiles.
+6) El cliente queda listo para usar su Wallet.
+
+El QR/NFC público es el punto de entrada del salón y es igual para todos. El
+token personal se crea durante el registro y se convierte en la tarjeta del
+cliente. Para registrar una visita se debe usar ese token personal, no el QR
+público, porque un código compartido no puede distinguir entre clientes.
+Cuando se conecte el registro de servicios con Supabase, el servicio guardado
+con ese customer_id activará el trigger de puntos y actualizará la Wallet.
+
+
+24. ENTRADAS SEPARADAS Y SERVICIOS CENTRALIZADOS
+-----------------------------------------------
+
+La aplicación tiene dos entradas:
+
+- /: página pública para clientes, Wallet, registro autónomo y acceso por
+  magic link. No muestra el formulario de administrador.
+- /admin: entrada privada para el administrador. Muestra el inicio de sesión
+  por correo y contraseña y, después, el panel administrativo.
+
+La URL /admin no sustituye la seguridad: Supabase Auth y las políticas RLS
+siguen validando el rol admin. Compartir u ocultar la URL no concede permisos.
+
+Cuando Supabase está activo, un nuevo servicio se inserta en public.services
+con customer_id, staff_id, precio, pago, notas y fecha. El trigger SQL asigna
+los puntos centralizados. La migración inicial crea el personal predeterminado
+necesario para registrar servicios. El almacenamiento local se conserva como
+respaldo del prototipo offline.
+
+
+18. CONFIGURACION DINAMICA DEL SALON
+------------------------------------
+
+El administrador ahora tiene una vista de Configuración para modificar:
+
+- Nombres del personal.
+- Porcentaje de liquidación de cada persona.
+- Notas de comisión.
+- Tipos de servicio disponibles en el formulario.
+
+La configuración se guarda en la clave localStorage:
+
+- hairsalon_v7_settings
+
+La liquidación utiliza los porcentajes guardados y distribuye los remanentes
+de empleados no propietarios entre los perfiles marcados como dueños. Si no
+existe configuración válida, se usan los valores iniciales de Jhon, Nelly y
+Luz. La configuración sigue siendo local y está preparada para migrarse
+posteriormente a una tabla de personal y configuración en backend.
+
+
+16. PROMOCION DE BARBERIA EN LA CUARTA VISITA
+----------------------------------------------
+
+La tarjeta de fidelización cuenta las visitas de barbería asociadas al cliente.
+Para este primer alcance solo califican:
+
+- Jhon barber como personal.
+- Servicio "Corte".
+- Servicio "Corte + barba".
+
+Precios de referencia configurados para la operación actual:
+
+- Corte: $18.000 COP.
+- Corte + barba: $23.000 COP.
+
+En la cuarta visita de barbería se aplica una sola vez un descuento del 5%:
+
+- Corte de $18.000: descuento de $900; total $17.100.
+- Corte + barba de $23.000: descuento de $1.150; total $21.850.
+
+El servicio guarda el precio original, precio final, porcentaje descontado,
+valor descontado y número de visita. La tarjeta del cliente muestra el avance
+"X de 4 visitas" y avisa cuando el beneficio ya fue aplicado. Las visitas
+posteriores no vuelven a recibir descuento dentro de esta promoción.
+
+La promoción solo se calcula cuando el servicio se asocia a una tarjeta de
+fidelidad. Servicios sin cliente asociado no incrementan el contador.
+
+
+17. VISTAS SEPARADAS POR ROL
+----------------------------
+
+La interfaz ahora utiliza shells independientes:
+
+- AdminView:
+  - Cabecera administrativa.
+  - Navegación de Liquidación, Citas Bot, Estadísticas, Registro y
+    Fidelización.
+  - Footer identificado como Administración.
+- ClientView:
+  - Cabecera de cliente.
+  - Solo muestra Mi Wallet y la tarjeta de fidelidad.
+  - Footer identificado como Mi Wallet.
+
+El selector de rol sigue siendo local y sirve para probar ambas experiencias
+en el mismo navegador. No representa todavía un sistema de autenticación real.
