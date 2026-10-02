@@ -1,7 +1,7 @@
 import { Scissors } from 'lucide-react'
 import RoleSwitcher from '../auth/RoleSwitcher'
 
-export default function Header({ role, onRoleChange }) {
+export default function Header({ role, onRoleChange, authenticated = false }) {
   return (
     <header className="flex flex-col lg:flex-row justify-between items-center mb-8 gap-6">
       <div className="flex items-center gap-4">
@@ -20,7 +20,17 @@ export default function Header({ role, onRoleChange }) {
           <p className="text-[10px] italic text-slate-500 mt-1">Tu mejor versión, con confianza.</p>
         </div>
       </div>
-      <RoleSwitcher role={role} onRoleChange={onRoleChange} />
+      {authenticated ? (
+        <button
+          type="button"
+          onClick={() => onRoleChange('logout')}
+          className="rounded-xl bg-[#121212] px-4 py-3 text-xs font-black uppercase tracking-widest text-[#e4c88a]"
+        >
+          Cerrar sesión
+        </button>
+      ) : (
+        <RoleSwitcher role={role} onRoleChange={onRoleChange} />
+      )}
     </header>
   )
 }

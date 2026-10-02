@@ -225,17 +225,23 @@ Cada tarjeta muestra:
 Los cálculos usan Math.round, por lo que los valores decimales se redondean.
 
 
-4.6. Estadísticas mensuales
+4.6. Estadísticas y reportes históricos
 
-La vista Estadísticas trabaja con el mes y año actuales:
+La vista Estadísticas permite seleccionar un rango inclusivo con los campos
+Desde y Hasta. El reporte:
 
-- Calcula el ingreso total del mes.
-- Calcula un total para cada día del mes.
-- Dibuja una barra por día.
-- Escala las barras con base en el día de mayor ingreso.
-- Incluye días sin ventas con una barra vacía.
+- Filtra los servicios por fecha local.
+- Calcula el ingreso total del periodo.
+- Muestra la cantidad de servicios incluidos.
+- Agrupa los ingresos por día en una gráfica.
+- Permite descargar un CSV separado por punto y coma, compatible con hojas de
+  cálculo en español.
+- Permite descargar un archivo XLS compatible con Microsoft Excel.
+- Abre una vista imprimible para usar la opción del navegador "Guardar como
+  PDF".
 
-No hay filtros para cambiar manualmente el mes ni exportación de reportes.
+Si la fecha inicial es posterior a la fecha final, se muestra un aviso y el
+reporte se considera vacío.
 
 
 4.7. Citas Bot
@@ -253,9 +259,10 @@ La vista Citas Bot tiene estas funciones:
 - El botón con check lleva a la vista Nuevo Registro.
 - El botón con X elimina la cita de la lista.
 
-Importante: la aceptación de una cita no crea automáticamente un servicio ni
-prellena el formulario con los datos de la cita. La integración con WhatsApp
-real todavía no existe; la función es solo una simulación local.
+La aceptación abre el formulario de registro prellenado con los datos de la
+cita. La cita se elimina únicamente después de guardar el servicio. La
+integración con WhatsApp real todavía no existe; la función es una simulación
+local.
 
 
 5. PERSISTENCIA DE DATOS
@@ -324,7 +331,11 @@ Comandos disponibles actualmente en package.json:
 - npm run build
 - npm run preview
 
-No existe actualmente un script npm test ni un script npm lint en package.json.
+También están disponibles:
+
+- npm run test
+- npm run lint
+- npm run format
 
 
 7. COMO PROBAR MANUALMENTE LA APLICACION
@@ -378,8 +389,13 @@ Prueba de estadísticas:
 
 1) Crear al menos un servicio.
 2) Entrar a "Estadísticas".
-3) Confirmar que el total del mes incluya el servicio.
-4) Confirmar que el día correspondiente tenga una barra de ventas.
+3) Seleccionar un rango que incluya el servicio.
+4) Confirmar que el total del periodo lo incluya.
+5) Confirmar que el día correspondiente tenga una barra de ventas.
+6) Pulsar CSV y comprobar que se descarga un archivo con los registros.
+7) Pulsar Excel y comprobar que se descarga un archivo .xls.
+8) Pulsar PDF / Imprimir y elegir "Guardar como PDF" en el diálogo del
+   navegador.
 
 Prueba de citas:
 
@@ -388,8 +404,7 @@ Prueba de citas:
 3) Confirmar que aparece "Cliente Simulada".
 4) Pulsar X y confirmar que desaparece.
 5) Volver a simular una cita y pulsar el botón con check.
-6) Confirmar que se abre Registro; recordar que los datos no se copian
-   automáticamente al formulario.
+6) Confirmar que se abre Registro con cliente, servicio y fecha prellenados.
 
 Prueba de persistencia:
 
@@ -419,26 +434,25 @@ Implementado:
 - Desglose por Efectivo y Nequi.
 - Liquidación configurable en el código para Jhon, Nelly y Luz.
 - Conteo diario de servicios por persona.
-- Estadísticas mensuales por día.
+- Estadísticas por rango de fechas y agrupación diaria.
+- Exportación CSV, Excel compatible y PDF mediante impresión del navegador.
 - Simulación de citas de WhatsApp.
+- Flujo cita a servicio con datos prellenados.
+- Edición de servicios y campo visible de notas.
+- Roles locales de administrador y cliente.
+- Wallet web/PWA local, clientes y puntos de fidelización.
+- Configuración dinámica de personal, porcentajes y tipos de servicio.
 - Persistencia local en el navegador.
 
 Pendiente o no implementado:
 
 - Backend y base de datos centralizada.
-- Inicio de sesión y roles.
+- Inicio de sesión y roles seguros con autenticación real.
 - Integración real con WhatsApp.
 - Agenda con fecha y hora seleccionables.
-- Edición de registros.
-- Exportación a Excel, CSV o PDF.
-- Reportes históricos por rangos de fechas.
-- Configuración de empleados, porcentajes y tipos de servicio desde la UI.
+- Integración nativa con Apple Wallet o Google Wallet.
 - Gestión real del estado de una cita.
-- Conversión automática de cita aceptada a servicio.
-- Campo visible y uso de notas.
 - Validaciones avanzadas de precio, fechas y datos duplicados.
-- Pruebas automatizadas.
-- Script de lint integrado a npm.
 - Favicon y branding finales: actualmente se conserva vite.svg.
 - Manejo de errores para datos corruptos en localStorage.
 
@@ -598,9 +612,11 @@ Reglas locales actuales:
 - Oro: desde 150 puntos.
 - Diamante: desde 300 puntos.
 
-Este prototipo todavía no integra NFC físico, OTP, WhatsApp, backend,
-recompensas canjeables ni sincronización multidispositivo. Esas funciones se
-reservan para las fases posteriores.
+El prototipo local todavía puede ejecutarse sin backend. La base para Supabase
+se encuentra en supabase/migrations y en los servicios de src/services. Las
+recompensas y canjes se modelan en el esquema centralizado mediante rewards,
+reward_redemptions y redeem_reward. La integración visual completa se
+conectará después de ejecutar la migración y configurar autenticación.
 
 
 14. IDENTIDAD VISUAL HAIR STYLE
@@ -652,9 +668,167 @@ public/manifest.webmanifest. No es todavía una tarjeta nativa de Apple Wallet
 ni Google Wallet: esas integraciones necesitan un backend, certificados,
 credenciales de emisor y endpoints seguros.
 
-La selección de rol es una demostración local y no debe considerarse
-autenticación. El control real de acceso, cuentas, contraseñas, JWT y roles
-seguros queda pendiente para la Fase 3.
+La selección de rol sigue siendo una demostración local cuando Supabase no está
+configurado. No debe considerarse autenticación. Con Supabase configurado, el
+acceso seguro debe usar Supabase Auth y la tabla profiles; nunca se deben
+guardar contraseñas en localStorage.
+
+
+19. BASE DE DATOS SUPABASE Y AUTENTICACION
+-------------------------------------------
+
+Se añadió la migración:
+
+- supabase/migrations/20261001200000_hair_style_initial_schema.sql
+
+Incluye customers, staff, services, points_transactions, appointments,
+rewards, reward_redemptions y profiles. También incluye el trigger que calcula
+los puntos al insertar un servicio, el procedimiento seguro para canjear
+recompensas, Realtime para clientes y transacciones, y políticas RLS.
+
+Para activar la conexión:
+
+1) Copiar .env.example como .env.
+2) Completar VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.
+3) Ejecutar la migración completa en el SQL Editor de Supabase.
+4) Crear usuarios en Supabase Auth y asociar cada usuario con una fila en
+   profiles. El rol admin es el único autorizado para administrar servicios,
+   personal, clientes, citas y recompensas.
+5) Reiniciar npm run dev después de cambiar el archivo .env.
+
+Archivos de integración:
+
+- src/lib/supabaseClient.js: cliente opcional y detección de configuración.
+- src/services/authService.js: sesión, inicio/cierre y perfil.
+- src/services/loyaltyService.js: registro, consulta, citas y Realtime.
+
+La clave anon puede estar en el frontend; nunca se debe incluir una
+service_role key. La protección real depende de RLS en Supabase, no de ocultar
+botones en React.
+
+
+20. FLUJO VISUAL AUTENTICADO
+-----------------------------
+
+Cuando las variables VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY están
+configuradas, la aplicación muestra primero el inicio de sesión de Supabase.
+No se permite entrar al panel por selección visual de rol.
+
+- Un perfil admin entra al panel completo.
+- Un perfil client solo entra a Wallet, puntos, visitas, recompensas, historial
+  de canjes y solicitud de citas.
+- Un usuario autenticado sin fila en profiles queda bloqueado con un mensaje de
+  configuración pendiente.
+- El botón de cerrar sesión invalida la sesión de Supabase.
+- Las recompensas se consultan desde rewards y el canje usa la función SQL
+  redeem_reward.
+- Las citas del cliente se insertan en appointments con su customer_id.
+
+El selector local de roles solo se conserva cuando Supabase no está configurado,
+para permitir pruebas offline del prototipo anterior.
+
+
+21. ACCESO DE CLIENTE POR QR/NFC Y CORREO
+---------------------------------------
+
+El acceso del cliente usa el token de la tarjeta como identificador, pero no
+como contraseña. El flujo es:
+
+1) El cliente escanea el QR de su tarjeta, acerca la tarjeta NFC o escribe el
+   token manualmente.
+2) Ingresa el correo asociado.
+3) Supabase Auth envía un magic link por correo y crea la identidad
+   autenticada si es el primer acceso.
+4) El cliente abre el enlace recibido y regresa a la aplicación.
+5) La función segura claim_customer_account valida el correo, crea o
+   recupera customers y vincula profiles.customer_id.
+6) El cliente entra únicamente a su Wallet, visitas, recompensas, historial y
+   agenda.
+
+El lector NFC usa Web NFC cuando el navegador lo soporta. En navegadores sin
+Web NFC se debe usar el QR o el token manual. La migración adicional
+supabase/migrations/20261002090500_customer_email_magic_link.sql debe ejecutarse
+en el SQL Editor después de la migración inicial. Esta migración permite que
+phone sea opcional para clientes que usan correo y reemplaza la validación por
+teléfono con validación por correo.
+
+Para activar el acceso por correo configura el proveedor Email de Supabase
+Authentication y agrega la URL de desarrollo y producción en Authentication
+Settings > URL Configuration. El token QR/NFC no se considera secreto
+suficiente para autenticar por sí solo.
+
+
+22. EMISION DE QR Y NFC
+------------------------
+
+Cada cliente recibe un token único al crear su tarjeta. Desde Administrador >
+Fidelización > seleccionar cliente se puede:
+
+- Visualizar el código QR generado.
+- Descargar el QR como imagen PNG para imprimirlo o enviarlo.
+- Copiar el token para una prueba manual.
+- Escribir el token en una etiqueta NFC desde un navegador compatible con Web
+  NFC.
+
+El QR contiene únicamente el token de la tarjeta, no la contraseña ni datos
+privados del cliente. Para emitir una tarjeta:
+
+1) Crear el cliente en Fidelización.
+2) Abrir su perfil.
+3) Descargar el QR e imprimirlo o compartirlo.
+4) Opcionalmente usar una etiqueta NFC NTAG213/215 y pulsar Escribir NFC desde
+   un teléfono Android compatible.
+5) El cliente escanea el QR o acerca la etiqueta NFC en la pantalla de acceso.
+
+Web NFC no está disponible en todos los navegadores, especialmente iPhone.
+Cuando no esté disponible se debe usar el QR. La etiqueta NFC debe escribirse
+con el token como texto plano; no se debe almacenar una contraseña en ella.
+
+
+23. REGISTRO AUTONOMO DEL CLIENTE
+----------------------------------
+
+El administrador no necesita crear cada cliente. En la pantalla de acceso se
+genera un QR público de inscripción con la URL:
+
+  /?registro=1
+
+Ese QR puede descargarse, imprimirse o escribirse como URL en una etiqueta
+NFC. Al escanearlo:
+
+1) Se abre directamente la pantalla de creación de Wallet.
+2) El cliente escribe su nombre y correo.
+3) El sistema genera un token personal único en el navegador.
+4) Supabase envía el magic link al correo.
+5) Al abrirlo, la función claim_customer_account crea customers y profiles.
+6) El cliente queda listo para usar su Wallet.
+
+El QR/NFC público es el punto de entrada del salón y es igual para todos. El
+token personal se crea durante el registro y se convierte en la tarjeta del
+cliente. Para registrar una visita se debe usar ese token personal, no el QR
+público, porque un código compartido no puede distinguir entre clientes.
+Cuando se conecte el registro de servicios con Supabase, el servicio guardado
+con ese customer_id activará el trigger de puntos y actualizará la Wallet.
+
+
+24. ENTRADAS SEPARADAS Y SERVICIOS CENTRALIZADOS
+-----------------------------------------------
+
+La aplicación tiene dos entradas:
+
+- /: página pública para clientes, Wallet, registro autónomo y acceso por
+  magic link. No muestra el formulario de administrador.
+- /admin: entrada privada para el administrador. Muestra el inicio de sesión
+  por correo y contraseña y, después, el panel administrativo.
+
+La URL /admin no sustituye la seguridad: Supabase Auth y las políticas RLS
+siguen validando el rol admin. Compartir u ocultar la URL no concede permisos.
+
+Cuando Supabase está activo, un nuevo servicio se inserta en public.services
+con customer_id, staff_id, precio, pago, notas y fecha. El trigger SQL asigna
+los puntos centralizados. La migración inicial crea el personal predeterminado
+necesario para registrar servicios. El almacenamiento local se conserva como
+respaldo del prototipo offline.
 
 
 18. CONFIGURACION DINAMICA DEL SALON

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import CustomerForm from './CustomerForm'
 import CustomerList from './CustomerList'
+import CustomerCardIssuer from './CustomerCardIssuer'
 
 export default function LoyaltyPanel({ customers, onCreate, onSelect, selectedCustomer, onCloseProfile }) {
   const [showForm, setShowForm] = useState(false)
@@ -20,8 +21,8 @@ export default function LoyaltyPanel({ customers, onCreate, onSelect, selectedCu
       </div>
       {showForm && (
         <CustomerForm
-          onSave={(formData) => {
-            onCreate(formData)
+          onSave={async (formData) => {
+            await onCreate(formData)
             setShowForm(false)
           }}
           onCancel={() => setShowForm(false)}
@@ -40,6 +41,7 @@ export default function LoyaltyPanel({ customers, onCreate, onSelect, selectedCu
           </p>
           <p className="mt-2 font-bold">{selectedCustomer.membership_tier}</p>
           <p className="mt-4 text-xs break-all opacity-80">QR: {selectedCustomer.nfc_qr_token}</p>
+          <CustomerCardIssuer customer={selectedCustomer} />
         </div>
       ) : (
         <CustomerList customers={customers} onSelect={onSelect} />
