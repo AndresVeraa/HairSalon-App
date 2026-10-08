@@ -1,17 +1,247 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HairSalon - Gestión Profesional</title>
-    <!-- Importación de fuente profesional -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Simulador interactivo del AFD de la válvula de control del tanque El Pórtico">
+  <title>El Pórtico · Simulador AFD</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['DM Sans', 'ui-sans-serif', 'system-ui'] },
+          colors: { ink: '#dce9f5', muted: '#7890a8', panel: '#102538', canvas: '#081521', aqua: '#49d6d0', amber: '#ffbd65', danger: '#ff6d75' }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #081521; color: #dce9f5; font-family: 'DM Sans', sans-serif; }
+    .mono { font-family: 'Space Mono', monospace; }
+    .panel { background: linear-gradient(145deg, rgba(16,37,56,.96), rgba(10,27,42,.96)); border: 1px solid #1c3a51; box-shadow: 0 18px 45px rgba(0,0,0,.16); }
+    .eyebrow { color: #7890a8; font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+    .grid-bg { background-image: linear-gradient(rgba(63,122,151,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(63,122,151,.06) 1px, transparent 1px); background-size: 26px 26px; }
+    button, input { font: inherit; }
+    button { transition: transform .15s ease, background .15s ease, border-color .15s ease, opacity .15s ease; }
+    button:active { transform: scale(.98); }
+    button:disabled { cursor: not-allowed; opacity: .36; }
+    .node { transition: fill .25s ease, stroke .25s ease, filter .25s ease; }
+    .node.active { fill: #49d6d0; stroke: #b8fffa; filter: drop-shadow(0 0 11px rgba(73,214,208,.85)); }
+    .node.fault { fill: #ff6d75; stroke: #ffd2d5; filter: drop-shadow(0 0 13px rgba(255,109,117,.8)); }
+    .water { transition: height .15s linear; }
+    .scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+    .scrollbar::-webkit-scrollbar-thumb { background: #28516a; border-radius: 5px; }
+    input[type=range] { accent-color: #49d6d0; }
+    @media (max-width: 900px) { .graph-wrap { min-height: 340px; } }
+  </style>
+</head>
+<body>
+  <main class="mx-auto max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8">
+    <header class="mb-5 flex flex-col justify-between gap-4 border-b border-[#1a354a] pb-5 sm:flex-row sm:items-end">
+      <div>
+        <div class="mb-2 flex items-center gap-3">
+          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-aqua/15 text-aqua">⌁</span>
+          <span class="eyebrow text-aqua">PLANTA EL PÓRTICO · AGUAS KPITAL</span>
+        </div>
+        <h1 class="text-2xl font-semibold tracking-tight text-white sm:text-3xl">Control de entrada <span class="text-aqua">/</span> AFD</h1>
+        <p class="mt-1 text-sm text-muted">Simulador determinista de la válvula automática del tanque de distribución</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="rounded-lg border border-[#1c3a51] bg-[#0c2031] px-4 py-2 text-right">
+          <div class="eyebrow">Reloj de simulación</div>
+          <div id="clock" class="mono mt-1 text-sm text-white">--:--:--</div>
+        </div>
+        <div id="modeBadge" class="rounded-lg border border-aqua/30 bg-aqua/10 px-4 py-2 text-center">
+          <div class="eyebrow">MODO</div><div id="modeLabel" class="mt-1 text-sm font-semibold text-aqua">MANUAL</div>
+        </div>
+      </div>
+    </header>
+
+    <section class="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div class="panel rounded-xl p-4"><div class="eyebrow">Nivel actual</div><div class="mt-2 flex items-end gap-2"><span id="levelStat" class="text-2xl font-semibold text-white">62.0%</span><span id="levelTrend" class="mb-1 text-xs text-muted">fijo</span></div><div class="mt-3 h-1.5 overflow-hidden rounded-full bg-[#17364b]"><div id="levelBar" class="h-full rounded-full bg-aqua" style="width:62%"></div></div></div>
+      <div class="panel rounded-xl p-4"><div class="eyebrow">Volumen almacenado</div><div id="volumeStat" class="mono mt-2 text-2xl font-semibold text-white">4.960 <span class="text-xs font-normal text-muted">m³</span></div><div class="mt-3 text-xs text-muted">Capacidad nominal 8.000 m³</div></div>
+      <div class="panel rounded-xl p-4"><div class="eyebrow">Estado AFD</div><div id="stateStat" class="mt-2 text-2xl font-semibold text-aqua">X0</div><div id="stateDesc" class="mt-1 truncate text-xs text-muted">Válvula cerrada</div></div>
+      <div class="panel rounded-xl p-4"><div class="eyebrow">Eventos registrados</div><div id="eventStat" class="mt-2 text-2xl font-semibold text-white">0</div><div id="lastEvent" class="mt-1 truncate text-xs text-muted">Esperando interacción</div></div>
+    </section>
+
+    <div class="grid gap-5 xl:grid-cols-[1.3fr_.7fr]">
+      <section class="panel overflow-hidden rounded-2xl">
+        <div class="flex items-center justify-between border-b border-[#1c3a51] px-5 py-4">
+          <div><div class="eyebrow">01 · Máquina de estados</div><h2 class="mt-1 text-lg font-semibold text-white">Diagrama de transición</h2></div>
+          <div class="flex items-center gap-3 text-[11px] text-muted"><span><i class="mr-1 inline-block h-2 w-2 rounded-full bg-aqua"></i>activo</span><span><i class="mr-1 inline-block h-2 w-2 rounded-full bg-[#45657b]"></i>inactivo</span></div>
+        </div>
+        <div class="graph-wrap grid-bg relative min-h-[390px] p-3 sm:p-6">
+          <svg id="stateGraph" viewBox="0 0 800 340" class="h-full w-full" role="img" aria-label="Grafo del autómata finito determinista">
+            <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#66859b"/></marker><marker id="arrowAqua" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#49d6d0"/></marker></defs>
+            <g fill="none" stroke="#45657b" stroke-width="1.8" marker-end="url(#arrow)">
+              <path d="M115 130 C180 75 300 75 385 130"/><path d="M385 165 C300 230 180 230 115 165"/><path d="M82 157 C82 205 82 220 82 246"/><path d="M55 250 C20 205 20 170 55 145" marker-end="url(#arrow)"/>
+            </g>
+            <g id="activeEdges" fill="none" stroke="#49d6d0" stroke-width="3" marker-end="url(#arrowAqua)" opacity="0"><path id="activeEdge" d="M115 130 C180 75 300 75 385 130"/></g>
+            <g class="mono" fill="#94aec0" font-size="11" text-anchor="middle"><text x="250" y="83">cmd_abrir</text><text x="250" y="238">cmd_cerrar</text><text x="82" y="205" fill="#ff9da3">falla_alarma</text><text x="35" y="205">reset</text></g>
+            <g id="nodes" class="mono" text-anchor="middle">
+              <g><circle id="node-X0" class="node" cx="82" cy="130" r="27" fill="#102538" stroke="#45657b" stroke-width="2"/><text x="82" y="135" fill="#dce9f5" font-weight="700">X0</text></g>
+              <g><circle id="node-X2" class="node" cx="410" cy="130" r="27" fill="#102538" stroke="#45657b" stroke-width="2"/><text x="410" y="135" fill="#dce9f5" font-weight="700">X2</text></g>
+              <g><circle id="node-X4" class="node" cx="82" cy="275" r="29" fill="#102538" stroke="#45657b" stroke-width="2"/><circle cx="82" cy="275" r="23" fill="none" stroke="#45657b" stroke-width="1"/><text x="82" y="280" fill="#dce9f5" font-weight="700">X4</text></g>
+            </g>
+            <g font-size="10" fill="#7890a8" text-anchor="middle"><text x="82" y="180">CERRADA</text><text x="410" y="180">ABIERTA</text><text x="82" y="320">FALLA · FINAL</text></g>
+          </svg>
+        </div>
+        <div class="grid grid-cols-2 border-t border-[#1c3a51] sm:grid-cols-4">
+          <div class="border-r border-[#1c3a51] p-4"><div class="eyebrow">Estado inicial</div><div class="mono mt-1 text-sm text-white">X0</div></div>
+          <div class="border-r border-[#1c3a51] p-4"><div class="eyebrow">Aceptación</div><div class="mono mt-1 text-sm text-danger">F = {X4}</div></div>
+          <div class="border-r border-[#1c3a51] p-4"><div class="eyebrow">Alfabeto</div><div class="mono mt-1 text-sm text-white">|Σ| = 6</div></div>
+          <div class="p-4"><div class="eyebrow">Estados operativos</div><div class="mono mt-1 text-sm text-white">2 + falla</div></div>
+        </div>
+      </section>
+
+      <section class="panel rounded-2xl">
+        <div class="border-b border-[#1c3a51] px-5 py-4"><div class="eyebrow">02 · Proceso hidráulico</div><h2 class="mt-1 text-lg font-semibold text-white">Tanque El Pórtico</h2></div>
+        <div class="p-5">
+          <div class="mb-4 flex items-end justify-between"><div><span id="tankLevel" class="text-4xl font-semibold text-white">62.0</span><span class="ml-1 text-lg text-aqua">%</span><div class="mt-1 text-xs text-muted">Cota de operación · 387.00 msnm</div></div><div id="tankStatus" class="rounded-full border border-aqua/30 bg-aqua/10 px-3 py-1 text-xs font-medium text-aqua">Nivel normal</div></div>
+          <div class="relative mx-auto h-64 max-w-[270px] rounded-b-[38px] border-2 border-[#52768a] bg-[#0b2030] shadow-[inset_0_0_30px_rgba(0,0,0,.35)]">
+            <div class="absolute -left-3 -right-3 top-0 h-3 rounded-full border-2 border-[#52768a] bg-[#17364b]"></div>
+            <div id="water" class="water absolute bottom-0 left-0 right-0 overflow-hidden rounded-b-[35px] bg-gradient-to-t from-[#147b8b] via-[#1aaeb1] to-[#5be0d5]" style="height:62%">
+              <div class="absolute left-0 right-0 top-0 h-1 bg-[#a4fff1]/80"></div><div class="absolute -top-2 left-1/4 h-3 w-1/2 rounded-full bg-white/20 blur-sm"></div>
+            </div>
+            <div class="absolute inset-y-5 right-3 flex flex-col justify-between text-[10px] text-[#87a6b8]"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
+            <div class="absolute -left-20 right-auto top-[10%] text-right text-[10px] text-danger">alarma &gt;95% ─</div><div class="absolute -left-20 right-auto top-[30%] text-right text-[10px] text-amber">apertura ≤30% ─</div><div class="absolute -left-20 right-auto top-[85%] text-right text-[10px] text-amber">cierre ≥85% ─</div>
+          </div>
+          <div class="mt-5 grid grid-cols-2 gap-3">
+            <div class="rounded-lg border border-[#1c3a51] bg-[#0b1d2d] p-3"><div class="eyebrow">Entrada</div><div id="inletStatus" class="mt-1 text-sm font-semibold text-white">Cerrada</div><div class="mt-2 flex items-center gap-2"><span id="inletLight" class="h-2 w-2 rounded-full bg-[#45657b]"></span><span class="text-[11px] text-muted">válvula motorizada</span></div></div>
+            <div class="rounded-lg border border-[#1c3a51] bg-[#0b1d2d] p-3"><div class="eyebrow">Salida manual</div><div class="mt-1 text-sm font-semibold text-white"><span id="outletValue">45</span>% abierta</div><input id="outlet" class="mt-2 w-full" type="range" min="0" max="100" value="45" aria-label="Apertura de salida manual"><div class="mt-1 flex justify-between text-[10px] text-muted"><span>cerrada</span><span>red ciudad</span></div></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="mt-5 grid gap-5 xl:grid-cols-[.85fr_1.15fr]">
+      <section class="panel rounded-2xl">
+        <div class="border-b border-[#1c3a51] px-5 py-4"><div class="eyebrow">03 · Control del operador</div>        <div class="mt-2 flex items-center justify-between"><h2 class="text-lg font-semibold text-white">Inyección de eventos</h2><div class="rounded-md border border-aqua/30 bg-aqua/10 px-3 py-1.5 text-xs font-semibold text-aqua">Manual</div></div></div>
+        <div class="p-5">
+          <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <button data-event="cmd_abrir" class="event-btn rounded-lg border border-[#28516a] bg-[#102b40] px-3 py-3 text-left hover:border-aqua/70 hover:bg-aqua/10"><span class="mono block text-[11px] text-aqua">cmd_abrir</span><span class="mt-1 block text-xs text-muted">sensor nivel bajo</span></button>
+            <button data-event="fin_apertura" class="event-btn hidden rounded-lg border border-[#28516a] bg-[#102b40] px-3 py-3 text-left"><span class="mono block text-[11px] text-aqua">fin_apertura</span><span class="mt-1 block text-xs text-muted">100% abierta</span></button>
+            <button data-event="cmd_cerrar" class="event-btn rounded-lg border border-[#28516a] bg-[#102b40] px-3 py-3 text-left hover:border-aqua/70 hover:bg-aqua/10"><span class="mono block text-[11px] text-amber">cmd_cerrar</span><span class="mt-1 block text-xs text-muted">sensor nivel alto</span></button>
+            <button data-event="fin_cierre" class="event-btn hidden rounded-lg border border-[#28516a] bg-[#102b40] px-3 py-3 text-left"><span class="mono block text-[11px] text-amber">fin_cierre</span><span class="mt-1 block text-xs text-muted">0% cerrada</span></button>
+            <button data-event="falla_alarma" class="event-btn rounded-lg border border-danger/30 bg-danger/5 px-3 py-3 text-left hover:border-danger hover:bg-danger/10"><span class="mono block text-[11px] text-danger">falla_alarma</span><span class="mt-1 block text-xs text-muted">rebose / falla</span></button>
+            <button data-event="reset" class="event-btn rounded-lg border border-[#28516a] bg-[#102b40] px-3 py-3 text-left hover:border-aqua/70 hover:bg-aqua/10"><span class="mono block text-[11px] text-aqua">reset</span><span class="mt-1 block text-xs text-muted">restablecimiento</span></button>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-2">
+            <button id="openValve" class="rounded-lg border border-aqua/40 bg-aqua/10 px-3 py-2.5 text-xs font-semibold text-aqua hover:bg-aqua/20">▶ Abrir completamente</button>
+            <button id="closeValve" class="rounded-lg border border-amber/40 bg-amber/10 px-3 py-2.5 text-xs font-semibold text-amber hover:bg-amber/20">■ Cerrar completamente</button>
+          </div>
+          <p class="mt-3 text-[11px] leading-relaxed text-muted">La válvula opera únicamente en dos posiciones: cerrada o abierta. No existen posiciones intermedias ni animaciones de movimiento.</p>
+          <div class="mt-5 flex items-center justify-between border-t border-[#1c3a51] pt-4"><span class="text-xs text-muted">Válvula binaria · nivel del tanque animado</span><button id="resetSim" class="text-xs font-semibold text-muted hover:text-white">↻ Reiniciar simulación</button></div>
+        </div>
+      </section>
+      <section class="panel rounded-2xl">
+        <div class="flex items-center justify-between border-b border-[#1c3a51] px-5 py-4"><div><div class="eyebrow">04 · Trazabilidad</div><h2 class="mt-1 text-lg font-semibold text-white">Log de auditoría</h2></div><span class="mono rounded bg-[#0b1d2d] px-2 py-1 text-[10px] text-muted">STREAM / LIVE</span></div>
+        <div id="log" class="scrollbar h-[265px] overflow-y-auto p-4"></div>
+      </section>
+    </div>
+
+    <section class="panel mt-5 overflow-hidden rounded-2xl">
+      <div class="flex flex-col justify-between gap-2 border-b border-[#1c3a51] px-5 py-4 sm:flex-row sm:items-center"><div><div class="eyebrow">05 · Especificación formal</div><h2 class="mt-1 text-lg font-semibold text-white">Tabla de transición δ</h2></div><div class="mono text-[11px] text-muted">M = (Q, Σ, δ, X0, F)</div></div>
+      <div class="scrollbar overflow-x-auto"><table class="w-full min-w-[600px] text-left text-xs"><thead class="bg-[#0b1d2d] text-[10px] uppercase tracking-wider text-muted"><tr><th class="px-5 py-3 font-medium">Estado</th><th class="px-4 py-3 font-medium">cmd_abrir</th><th class="px-4 py-3 font-medium">cmd_cerrar</th><th class="px-4 py-3 font-medium">falla_alarma</th><th class="px-4 py-3 font-medium">reset</th></tr></thead><tbody id="transitionTable"></tbody></table></div>
+    </section>
+    <footer class="flex flex-col justify-between gap-2 py-6 text-[11px] text-muted sm:flex-row"><span>Modelo de simulación · capacidad nominal 8.000 m³ · salida manual hacia red urbana</span><span class="mono">AFD-PORTICO / v1.0</span></footer>
+  </main>
+
+  <script>
+    /* MODELO: definición matemática del AFD y sus transiciones */
+    const Model = (() => {
+      const states = {
+        X0: { label: 'Válvula cerrada', valve: 'Cerrada' }, X1: { label: 'Válvula abriendo', valve: 'Abriendo' },
+        X2: { label: 'Válvula abierta', valve: 'Abierta' }, X3: { label: 'Válvula cerrando', valve: 'Cerrando' },
+        X4: { label: 'Bloqueo de emergencia / falla', valve: 'Bloqueada' }
+      };
+      const events = ['cmd_abrir', 'fin_apertura', 'cmd_cerrar', 'fin_cierre', 'falla_alarma', 'reset'];
+      const transitions = { X0: { cmd_abrir: 'X2', falla_alarma: 'X4' }, X1: { falla_alarma: 'X4' }, X2: { cmd_cerrar: 'X0', falla_alarma: 'X4' }, X3: { falla_alarma: 'X4' }, X4: { cmd_abrir: 'X4', fin_apertura: 'X4', cmd_cerrar: 'X4', fin_cierre: 'X4', falla_alarma: 'X4', reset: 'X0' } };
+      return { states, events, transitions, next: (state, event) => transitions[state][event] || state };
+    })();
+
+    /* CONTROLADOR: estado del proceso, dinámica hidráulica y ciclo automático */
+    const Controller = (() => {
+      let state = 'X0', level = 62, outlet = 45, mode = 'manual', eventCount = 0, lastEvent = 'Esperando interacción', logEntries = [];
+      let autoStage = null, lastAuto = 0;
+      const listeners = [];
+      const notify = () => listeners.forEach(listener => listener({ state, level, outlet, mode, eventCount, lastEvent, logEntries }));
+      const timestamp = () => new Date().toLocaleTimeString('es-CO', { hour12: false });
+      const dispatch = (event, source = 'operador') => {
+        const previous = state, next = Model.next(state, event);
+        if (next === state && event !== 'falla_alarma') return false;
+        state = next; eventCount += 1; lastEvent = event;
+        logEntries.unshift({ time: timestamp(), previous, event, next, level, valve: Model.states[next].valve, source });
+        if (logEntries.length > 80) logEntries.pop();
+        notify(); return true;
+      };
+      const tick = (now) => {
+        const rate = state === 'X2' ? 0.17 : 0;
+        const demand = outlet * 0.0019;
+        level = Math.max(0, Math.min(100, level + rate - demand));
+        if (level > 95 && state !== 'X4') dispatch('falla_alarma', 'sensor');
+        notify();
+      };
+      const setValve = (open, source = 'operador') => {
+        const next = open ? 'X2' : 'X0';
+        const event = open ? 'cmd_abrir' : 'cmd_cerrar';
+        if ((open && state === 'X2') || (!open && state === 'X0') || state === 'X4') return false;
+        const previous = state; state = next; eventCount += 1; lastEvent = event;
+        logEntries.unshift({ time: timestamp(), previous, event, next, level, valve: Model.states[next].valve, source });
+        if (logEntries.length > 80) logEntries.pop(); notify(); return true;
+      };
+      return { subscribe: fn => listeners.push(fn), dispatch, setValve, tick, setLevel: value => { level = Number(value); notify(); }, setOutlet: value => { outlet = Number(value); notify(); }, setMode: value => { mode = value; autoStage = null; notify(); }, reset: () => { state = 'X0'; level = 62; outlet = 45; mode = 'manual'; eventCount = 0; lastEvent = 'Esperando interacción'; logEntries = []; notify(); }, get: () => ({ state, level, outlet, mode, eventCount, lastEvent, logEntries }) };
+    })();
+
+    /* VISTA: renderizado SVG, paneles, tabla y consola */
+    const View = (() => {
+      const $ = id => document.getElementById(id);
+      const edgePaths = { 'X0>X2': 'M115 130 C180 75 300 75 385 130', 'X2>X0': 'M385 165 C300 230 180 230 115 165', 'X0>X4': 'M82 157 C82 205 82 220 82 246', 'X4>X0': 'M55 250 C20 205 20 170 55 145' };
+      const renderTable = () => {
+        const visibleStates = ['X0', 'X2', 'X4']; const visibleEvents = ['cmd_abrir', 'cmd_cerrar', 'falla_alarma', 'reset'];
+        $('transitionTable').innerHTML = visibleStates.map(state => `<tr class="border-t border-[#1c3a51]"><td class="px-5 py-3 font-semibold ${state === 'X4' ? 'text-danger' : 'text-white'}">${state}${state === 'X0' ? ' · inicial' : ''}${state === 'X4' ? ' · final' : ''}</td>${visibleEvents.map(event => `<td class="transition-cell px-4 py-3 ${Model.transitions[state][event] ? 'text-aqua' : 'text-[#38556a]'}" data-from="${state}" data-event="${event}">${Model.transitions[state][event] || '—'}</td>`).join('')}</tr>`).join('');
+      };
+      const render = data => {
+        const { state, level, outlet, mode, eventCount, lastEvent, logEntries } = data;
+        Object.keys(Model.states).forEach(id => { const node = $('node-' + id); if (!node) return; node.classList.toggle('active', state === id && id !== 'X4'); node.classList.toggle('fault', state === id && id === 'X4'); });
+        const stateInfo = Model.states[state]; $('levelStat').textContent = `${level.toFixed(1)}%`; $('levelBar').style.width = `${level}%`; $('volumeStat').innerHTML = `${Math.round(level * 80).toLocaleString('es-CO')} <span class="text-xs font-normal text-muted">m³</span>`; $('stateStat').textContent = state; $('stateStat').className = `mt-2 text-2xl font-semibold ${state === 'X4' ? 'text-danger' : 'text-aqua'}`; $('stateDesc').textContent = stateInfo.label; $('eventStat').textContent = eventCount; $('lastEvent').textContent = lastEvent;
+        $('tankLevel').textContent = level.toFixed(1); $('water').style.height = `${level}%`; $('outlet').value = outlet; $('outletValue').textContent = outlet; $('inletStatus').textContent = stateInfo.valve; $('inletLight').className = `h-2 w-2 rounded-full ${state === 'X4' ? 'bg-danger pulse' : state === 'X2' ? 'bg-aqua pulse' : state === 'X0' ? 'bg-[#45657b]' : 'bg-amber pulse'}`;
+        const status = level > 95 ? ['Alarma de rebose', 'border-danger/40 bg-danger/10 text-danger'] : level <= 30 ? ['Nivel bajo', 'border-amber/40 bg-amber/10 text-amber'] : ['Nivel normal', 'border-aqua/30 bg-aqua/10 text-aqua']; $('tankStatus').textContent = status[0]; $('tankStatus').className = `rounded-full border px-3 py-1 text-xs font-medium ${status[1]}`;
+        const trend = state === 'X2' ? 'entrada abierta' : 'estable'; $('levelTrend').textContent = trend; $('levelTrend').className = `mb-1 text-xs ${state === 'X2' ? 'text-aqua' : 'text-muted'}`;
+        $('modeLabel').textContent = mode === 'auto' ? 'AUTOMÁTICO' : 'MANUAL'; $('modeBadge').className = `rounded-lg border px-4 py-2 text-center ${mode === 'auto' ? 'border-amber/30 bg-amber/10' : 'border-aqua/30 bg-aqua/10'}`; $('modeLabel').className = `mt-1 text-sm font-semibold ${mode === 'auto' ? 'text-amber' : 'text-aqua'}`;
+        $('log').innerHTML = logEntries.length ? logEntries.map(item => `<div class="border-b border-[#183449] py-2.5 last:border-0"><div class="flex gap-2 text-[10px]"><span class="mono text-muted">${item.time}</span><span class="rounded bg-[#17364b] px-1.5 text-[#9bb6c7]">${item.source}</span></div><div class="mono mt-1 text-[11px]"><span class="text-white">${item.previous}</span><span class="mx-1 text-muted">──(</span><span class="text-aqua">${item.event}</span><span class="mx-1 text-muted">)──&gt;</span><span class="${item.next === 'X4' ? 'text-danger' : 'text-white'}">${item.next}</span><span class="ml-2 text-muted">| ${item.level.toFixed(1)}% · ${item.valve}</span></div></div>`).join('') : '<div class="flex h-full items-center justify-center text-xs text-muted">Los eventos aparecerán aquí en tiempo real.</div>';
+        document.querySelectorAll('.transition-cell').forEach(cell => cell.classList.toggle('bg-aqua/10', cell.dataset.from === state && Model.transitions[state][cell.dataset.event]));
+        const displayState = state === 'X1' ? 'X2' : state === 'X3' ? 'X0' : state; const edge = displayState === 'X0' ? ['cmd_abrir', 'X2'] : displayState === 'X2' ? ['cmd_cerrar', 'X0'] : displayState === 'X4' ? ['reset', 'X0'] : ['falla_alarma', 'X4']; const edgePath = edgePaths[`${displayState}>${edge[1]}`]; $('activeEdges').style.opacity = edgePath ? '1' : '0'; if (edgePath) $('activeEdge').setAttribute('d', edgePath);
+      };
+      return { render, renderTable };
+    })();
+
+    View.renderTable(); Controller.subscribe(View.render); View.render(Controller.get());
+    document.querySelectorAll('.event-btn').forEach(button => button.addEventListener('click', () => {
+      if (button.dataset.event === 'cmd_abrir') Controller.setValve(true);
+      else if (button.dataset.event === 'cmd_cerrar') Controller.setValve(false);
+      else Controller.dispatch(button.dataset.event);
+    }));
+    document.getElementById('openValve').addEventListener('click', () => {
+      const current = Controller.get().state;
+      if (current === 'X0') Controller.setValve(true);
+    });
+    document.getElementById('closeValve').addEventListener('click', () => {
+      const current = Controller.get().state;
+      if (current === 'X2') Controller.setValve(false);
+    });
+    document.getElementById('outlet').addEventListener('input', event => Controller.setOutlet(event.target.value));
+    document.getElementById('resetSim').addEventListener('click', () => Controller.reset());
+    setInterval(() => {
+      Controller.tick(performance.now());
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString('es-CO', { hour12: false });
+    }, 100);
+  </script>
+</body>
 </html>
